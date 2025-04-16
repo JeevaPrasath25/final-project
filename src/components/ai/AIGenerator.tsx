@@ -1,15 +1,18 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Sparkles, RefreshCcw, Download, Copy } from "lucide-react";
+import { Sparkles, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
-const supabase = createClient(
-  "https://olwapbbjgyahmtpgbrgt.supabase.co", 
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sd2FwYmJqZ3lhaG10cGdicmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MDcxNDAsImV4cCI6MjA2MDI4MzE0MH0.Dpkk9f-93mLciLrvbfjTkm9b7c4UVjB1qmdS2mTQJpM"
-);
+const samplePrompts = [
+  "A modern Mediterranean villa with a pool and ocean view",
+  "A cozy mountain cabin with large windows and a stone fireplace",
+  "A minimalist Japanese-inspired home with an interior garden"
+];
 
 const AIGenerator = () => {
   const [prompt, setPrompt] = useState("");
@@ -59,14 +62,6 @@ const AIGenerator = () => {
     setPrompt(sample);
   };
 
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(prompt);
-    toast({
-      title: "Copied to clipboard",
-      description: "Your prompt has been copied to clipboard."
-    });
-  };
-
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto">
@@ -108,7 +103,6 @@ const AIGenerator = () => {
 
           <div className="flex justify-between">
             <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(prompt)}>
-              <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
             <Button onClick={handleGenerate} disabled={isGenerating}>
@@ -149,16 +143,17 @@ const AIGenerator = () => {
                         link.download = `design_${index + 1}.png`;
                         link.click();
                       }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
