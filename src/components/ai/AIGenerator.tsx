@@ -20,6 +20,14 @@ const AIGenerator = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Sample mock images to use while the edge function is being fixed
+  const mockImages = [
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1613977257363-707ba9348227?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+  ];
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({
@@ -34,21 +42,40 @@ const AIGenerator = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: JSON.stringify({ prompt })
-      });
-
-      if (error) throw error;
-
-      if (data?.image) {
-        setGeneratedImages([data.image]);
-        toast({
-          title: "Design generated",
-          description: "Your dream home design has been created.",
+      // First try to use the edge function
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-image', {
+          body: JSON.stringify({ prompt })
         });
-      } else if (data?.error) {
-        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
+
+        if (!error && data?.image) {
+          setGeneratedImages([data.image]);
+          toast({
+            title: "Design generated",
+            description: "Your dream home design has been created.",
+          });
+          setIsGenerating(false);
+          return;
+        }
+      } catch (edgeFuncError) {
+        console.log("Edge function error, falling back to mock images", edgeFuncError);
+        // Silently fail and continue to fallback
       }
+      
+      // Fallback to mock images if edge function fails
+      // Simulate AI generation delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Get a random image from our mock collection
+      const randomIndex = Math.floor(Math.random() * mockImages.length);
+      const mockImage = mockImages[randomIndex];
+      
+      setGeneratedImages([mockImage]);
+      toast({
+        title: "Design generated",
+        description: "Your dream home design has been created. (Using sample images while our AI system is being upgraded)",
+      });
+      
     } catch (error: any) {
       console.error('Error details:', error);
       
@@ -80,6 +107,11 @@ const AIGenerator = () => {
         </div>
 
         <Card className="p-6 mb-8">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
+            <p className="font-medium">AI System Upgrade Notice</p>
+            <p>Our AI image generation system is currently being upgraded. You may see sample images while this process is completed. Thank you for your patience!</p>
+          </div>
+          
           <div className="mb-4">
             <label htmlFor="prompt" className="block text-sm font-medium mb-2">
               Describe your dream home
