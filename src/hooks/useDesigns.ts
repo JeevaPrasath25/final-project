@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Define the shape of our design data
 export interface Design {
   id: string;
   title: string;
@@ -16,6 +17,12 @@ export interface Design {
   design_saves: { count: number };
 }
 
+// Create a type for the Supabase client with 'any' for unknown tables
+type AnyTable = any;
+type SupabaseAnyQuery = {
+  from: (table: string) => AnyTable;
+};
+
 export const useDesigns = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -27,9 +34,11 @@ export const useDesigns = () => {
     try {
       if (!user) return;
 
-      // Use type assertion to bypass TypeScript checking
-      const { data: designsData, error } = await (supabase
-        .from('designs') as any)
+      // Use the any-typed supabase query for tables not in the type definitions
+      const anySupabase = supabase as unknown as SupabaseAnyQuery;
+      
+      const { data: designsData, error } = await anySupabase
+        .from('designs')
         .select('*')
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -40,30 +49,30 @@ export const useDesigns = () => {
       const designsWithUserActions = await Promise.all(
         (designsData || []).map(async (design) => {
           // Check if user has liked the design
-          const { data: likeData, error: likeError } = await (supabase
-            .from('design_likes') as any)
+          const { data: likeData, error: likeError } = await anySupabase
+            .from('design_likes')
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Check if user has saved the design
-          const { data: saveData, error: saveError } = await (supabase
-            .from('design_saves') as any)
+          const { data: saveData, error: saveError } = await anySupabase
+            .from('design_saves')
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Count likes for the design
-          const { count: likesCount } = await (supabase
-            .from('design_likes') as any)
+          const { count: likesCount } = await anySupabase
+            .from('design_likes')
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
           // Count saves for the design
-          const { count: savesCount } = await (supabase
-            .from('design_saves') as any)
+          const { count: savesCount } = await anySupabase
+            .from('design_saves')
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
@@ -120,9 +129,11 @@ export const useDesigns = () => {
     try {
       if (!user) return false;
 
-      // Use type assertion for the insert operation
-      const { error } = await (supabase
-        .from('designs') as any)
+      // Use the any-typed supabase query
+      const anySupabase = supabase as unknown as SupabaseAnyQuery;
+      
+      const { error } = await anySupabase
+        .from('designs')
         .insert({
           user_id: user.id,
           title,
@@ -160,10 +171,13 @@ export const useDesigns = () => {
         return;
       }
 
+      // Use the any-typed supabase query
+      const anySupabase = supabase as unknown as SupabaseAnyQuery;
+
       if (currentlyLiked) {
         // Unlike the design
-        const { error } = await (supabase
-          .from('design_likes') as any)
+        const { error } = await anySupabase
+          .from('design_likes')
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
@@ -171,8 +185,8 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Like the design
-        const { error } = await (supabase
-          .from('design_likes') as any)
+        const { error } = await anySupabase
+          .from('design_likes')
           .insert({
             design_id: designId,
             user_id: user.id,
@@ -216,10 +230,13 @@ export const useDesigns = () => {
         return;
       }
 
+      // Use the any-typed supabase query
+      const anySupabase = supabase as unknown as SupabaseAnyQuery;
+
       if (currentlySaved) {
         // Unsave the design
-        const { error } = await (supabase
-          .from('design_saves') as any)
+        const { error } = await anySupabase
+          .from('design_saves')
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
@@ -227,8 +244,8 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Save the design
-        const { error } = await (supabase
-          .from('design_saves') as any)
+        const { error } = await anySupabase
+          .from('design_saves')
           .insert({
             design_id: designId,
             user_id: user.id,
