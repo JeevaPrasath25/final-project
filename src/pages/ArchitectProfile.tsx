@@ -1,305 +1,501 @@
 
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Star, MessageSquare, MapPin, Calendar, CheckCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import ProjectGrid from "@/components/explore/ProjectGrid";
+import { Loader2, Upload, Heart, Bookmark, PenSquare, User, Image as ImageIcon, Camera } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-// Sample architects data
-const architectsData = [
-  {
-    id: "elena-rodriguez",
-    name: "Elena Rodriguez",
-    profileImage: "https://randomuser.me/api/portraits/women/32.jpg",
-    specialty: "Modern Minimalist Design",
-    bio: "Award-winning architect with over 10 years of experience specializing in sustainable luxury homes that blend seamlessly with their surroundings. I believe in creating spaces that not only look beautiful but feel right for the people who inhabit them. My approach combines cutting-edge technology with timeless design principles to create homes that are both forward-thinking and comfortable.",
-    location: "Barcelona, Spain",
-    rating: 4.9,
-    projects: 24,
-    available: true,
-    experience: "12 years",
-    education: "Master of Architecture, University of Barcelona",
-    awards: [
-      "European Design Award 2022",
-      "Sustainable Architecture Prize 2021",
-      "Young Architect of the Year 2019"
-    ],
-    languages: ["English", "Spanish", "Catalan"],
-    tags: ["Luxury Homes", "Sustainable", "Minimalist", "Coastal"]
-  },
-  {
-    id: "james-wilson",
-    name: "James Wilson",
-    profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
-    specialty: "Urban Eco Architecture",
-    bio: "Creating innovative urban housing solutions that incorporate green spaces and sustainable technologies for better city living. My work focuses on the intersection of dense urban environments and natural elements, finding ways to bring nature into the concrete jungle. I'm passionate about creating homes that enhance wellbeing through biophilic design principles and smart technology integration.",
-    location: "Singapore",
-    rating: 4.7,
-    projects: 18,
-    available: true,
-    experience: "8 years",
-    education: "Master of Architecture, National University of Singapore",
-    awards: [
-      "Asian Green Building Award 2023",
-      "Urban Innovation Prize 2022"
-    ],
-    languages: ["English", "Mandarin"],
-    tags: ["Eco-friendly", "Urban", "Smart Homes", "Contemporary"]
-  },
-  {
-    id: "sophia-chang",
-    name: "Sophia Chang",
-    profileImage: "https://randomuser.me/api/portraits/women/68.jpg",
-    specialty: "Luxury Coastal Homes",
-    bio: "Specializes in designing stunning beachfront properties that maximize ocean views while incorporating sustainable materials and resistant to coastal conditions. Having grown up near the ocean, I understand the unique challenges and opportunities of coastal design. My projects emphasize the connection between indoor and outdoor living, creating seamless transitions that extend living spaces and embrace the natural environment.",
-    location: "Los Angeles, USA",
-    rating: 4.8,
-    projects: 31,
-    available: false,
-    experience: "15 years",
-    education: "Master of Architecture, UCLA",
-    awards: [
-      "Architectural Digest Design Award 2022",
-      "AIA Residential Design Award 2021",
-      "Coastal Living Home of the Year 2020"
-    ],
-    languages: ["English", "Korean"],
-    tags: ["Beachfront", "Luxury", "Contemporary", "Open Concept"]
-  },
-  {
-    id: "marcus-jensen",
-    name: "Marcus Jensen",
-    profileImage: "https://randomuser.me/api/portraits/men/22.jpg",
-    specialty: "Nordic Minimalism",
-    bio: "Bringing Scandinavian design principles to residential architecture with a focus on functionality, light, and connection to nature. I believe that simplicity is not the absence of something, but the presence of the right things. My designs feature clean lines, natural materials, and thoughtful details that create serene, light-filled spaces that are a joy to live in.",
-    location: "Copenhagen, Denmark",
-    rating: 4.9,
-    projects: 27,
-    available: true,
-    experience: "14 years",
-    education: "Royal Danish Academy of Fine Arts, School of Architecture",
-    awards: [
-      "Nordic Design Award 2023",
-      "European Prize for Architecture 2021",
-      "Danish Design Award 2020"
-    ],
-    languages: ["English", "Danish", "Swedish", "Norwegian"],
-    tags: ["Scandinavian", "Minimalist", "Wood", "Natural Light"]
-  },
-  {
-    id: "isabella-rossi",
-    name: "Isabella Rossi",
-    profileImage: "https://randomuser.me/api/portraits/women/42.jpg",
-    specialty: "Mediterranean Villa Design",
-    bio: "Preserving the essence of Mediterranean architecture while incorporating modern amenities and sustainable practices. My designs celebrate the rich architectural heritage of the Mediterranean region while adapting it for contemporary living. I'm particularly interested in the use of local materials, passive cooling techniques, and creating indoor-outdoor living spaces that embrace the Mediterranean lifestyle.",
-    location: "Santorini, Greece",
-    rating: 4.6,
-    projects: 22,
-    available: true,
-    experience: "10 years",
-    education: "University of Athens, School of Architecture",
-    awards: [
-      "Mediterranean Architecture Prize 2022",
-      "Heritage Preservation Award 2020"
-    ],
-    languages: ["English", "Italian", "Greek"],
-    tags: ["Mediterranean", "Villa", "Traditional", "Courtyard"]
-  },
-  {
-    id: "daniel-smith",
-    name: "Daniel Smith",
-    profileImage: "https://randomuser.me/api/portraits/men/52.jpg",
-    specialty: "Industrial Conversions",
-    bio: "Transforming industrial spaces into unique living environments that honor the original architecture while adding modern comforts. I'm passionate about adaptive reuse and giving new life to old buildings. My designs maintain the character and history of industrial structures while reimagining them as comfortable, contemporary homes. Each project is a unique exploration of how to balance preservation with innovation.",
-    location: "Brooklyn, NY",
-    rating: 4.7,
-    projects: 19,
-    available: false,
-    experience: "9 years",
-    education: "Pratt Institute, School of Architecture",
-    awards: [
-      "Adaptive Reuse Excellence Award 2023",
-      "Urban Renewal Prize 2021"
-    ],
-    languages: ["English"],
-    tags: ["Industrial", "Loft", "Conversion", "Urban"]
-  }
-];
-
-// Sample projects data matching with architects
-const projectsByArchitect = {
-  "elena-rodriguez": [
-    {
-      id: 1,
-      title: "Minimalist Lakeside Villa",
-      description: "A serene retreat with panoramic lake views and clean lines, perfect for those seeking tranquility in nature.",
-      imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Elena Rodriguez",
-      architectId: "elena-rodriguez",
-      location: "Lake Como, Italy",
-      style: "minimalist",
-      rooms: 4,
-      size: 3200,
-      likes: 245,
-      date: "2024-03-15",
-      featured: true
-    },
-    {
-      id: 7,
-      title: "Glass House Pavilion",
-      description: "A transparent modern home that blurs the boundary between inside and outside, featuring minimalist interiors and abundant natural light.",
-      imageUrl: "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Elena Rodriguez",
-      architectId: "elena-rodriguez",
-      location: "Madrid, Spain",
-      style: "modern",
-      rooms: 3,
-      size: 2600,
-      likes: 198,
-      date: "2023-11-05"
-    }
-  ],
-  "james-wilson": [
-    {
-      id: 2,
-      title: "Urban Garden House",
-      description: "Sustainable living with integrated vertical gardens in the heart of a bustling metropolis.",
-      imageUrl: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "James Wilson",
-      architectId: "james-wilson",
-      location: "Singapore",
-      style: "contemporary",
-      rooms: 3,
-      size: 1800,
-      likes: 189,
-      date: "2024-02-28"
-    }
-  ],
-  "sophia-chang": [
-    {
-      id: 3,
-      title: "Coastal Modern Retreat",
-      description: "Luxurious beachfront property with sustainable materials and panoramic ocean views.",
-      imageUrl: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Sophia Chang",
-      architectId: "sophia-chang",
-      location: "Malibu, California",
-      style: "modern",
-      rooms: 5,
-      size: 4200,
-      likes: 310,
-      date: "2024-03-05"
-    }
-  ],
-  "marcus-jensen": [
-    {
-      id: 4,
-      title: "Nordic Forest Cabin",
-      description: "Minimalist cabin nestled among pine trees, featuring natural materials and large windows.",
-      imageUrl: "https://images.unsplash.com/photo-1575517111839-3a3843ee7f5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Marcus Jensen",
-      architectId: "marcus-jensen",
-      location: "Oslo, Norway",
-      style: "scandinavian",
-      rooms: 2,
-      size: 1200,
-      likes: 175,
-      date: "2024-01-20"
-    }
-  ],
-  "isabella-rossi": [
-    {
-      id: 5,
-      title: "Mediterranean Courtyard Villa",
-      description: "Traditional Mediterranean villa with a central courtyard and terracotta roof tiles.",
-      imageUrl: "https://images.unsplash.com/photo-1615529328331-f8917597711f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Isabella Rossi",
-      architectId: "isabella-rossi",
-      location: "Santorini, Greece",
-      style: "mediterranean",
-      rooms: 4,
-      size: 2800,
-      likes: 232,
-      date: "2024-02-10",
-      featured: true
-    }
-  ],
-  "daniel-smith": [
-    {
-      id: 6,
-      title: "Industrial Loft Conversion",
-      description: "Former warehouse transformed into a spacious loft with original industrial elements.",
-      imageUrl: "https://images.unsplash.com/photo-1523755231516-e43fd2e8dca5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      architect: "Daniel Smith",
-      architectId: "daniel-smith",
-      location: "Brooklyn, NY",
-      style: "industrial",
-      rooms: 2,
-      size: 2100,
-      likes: 168,
-      date: "2024-03-22"
-    }
-  ]
-};
-
-const ArchitectProfile = () => {
-  const { id } = useParams();
-  const [architect, setArchitect] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+const ArchitectProfilePage = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [designs, setDesigns] = useState<any[]>([]);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const [designTitle, setDesignTitle] = useState("");
+  const [designImage, setDesignImage] = useState<File | null>(null);
+  const [uploadingDesign, setUploadingDesign] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const profileImageRef = useRef<HTMLInputElement>(null);
+  const designImageRef = useRef<HTMLInputElement>(null);
+
+  // Schema for profile form validation
+  const profileFormSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    contact_number: z.string().optional(),
+    bio: z.string().max(500, "Bio cannot exceed 500 characters").optional(),
+  });
+
+  // Schema for design upload form validation
+  const designFormSchema = z.object({
+    title: z.string().min(3, "Title must be at least 3 characters"),
+  });
+
+  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      username: "",
+      contact_number: "",
+      bio: "",
+    },
+  });
+
+  const designForm = useForm<z.infer<typeof designFormSchema>>({
+    resolver: zodResolver(designFormSchema),
+    defaultValues: {
+      title: "",
+    },
+  });
 
   useEffect(() => {
-    // Simulate fetching architect data
-    setIsLoading(true);
-    setTimeout(() => {
-      const foundArchitect = architectsData.find(a => a.id === id);
-      setArchitect(foundArchitect || null);
-      
-      // Get projects by architect
-      const architectProjects = projectsByArchitect[id as keyof typeof projectsByArchitect] || [];
-      setProjects(architectProjects);
-      
-      setIsLoading(false);
-    }, 500);
-  }, [id]);
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You need to be logged in to view your profile",
+      });
+      navigate("/login");
+      return;
+    }
 
-  const handleContact = () => {
-    toast({
-      title: "Message sent",
-      description: `Your message has been sent to ${architect.name}`,
-    });
+    fetchProfileData();
+    fetchDesigns();
+  }, [user]);
+
+  const fetchProfileData = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+
+      if (error) throw error;
+
+      setProfileData(data);
+      profileForm.reset({
+        username: data.username || "",
+        contact_number: data.contact_details || "",
+        bio: data.bio || "",
+      });
+
+      // Get profile image if exists
+      if (data.avatar_url) {
+        setProfileImageUrl(data.avatar_url);
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching profile",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="animate-pulse">Loading architect profile...</div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const fetchDesigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("designs")
+        .select("*, design_likes(count), design_saves(count)")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false });
 
-  if (!architect) {
+      if (error) throw error;
+
+      // For each design, check if the current user has liked or saved it
+      const designsWithUserActions = await Promise.all(
+        data.map(async (design) => {
+          const [likesResult, savesResult] = await Promise.all([
+            supabase
+              .from("design_likes")
+              .select("*")
+              .eq("design_id", design.id)
+              .eq("user_id", user?.id)
+              .single(),
+            supabase
+              .from("design_saves")
+              .select("*")
+              .eq("design_id", design.id)
+              .eq("user_id", user?.id)
+              .single(),
+          ]);
+
+          return {
+            ...design,
+            liked_by_user: !likesResult.error,
+            saved_by_user: !savesResult.error,
+          };
+        })
+      );
+
+      setDesigns(designsWithUserActions);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching designs",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfileImage(e.target.files[0]);
+    }
+  };
+
+  const handleDesignImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setDesignImage(e.target.files[0]);
+      
+      // Set the file name as the default title if the title is empty
+      const fileName = e.target.files[0].name.split('.')[0];
+      if (!designTitle) {
+        setDesignTitle(fileName);
+        designForm.setValue("title", fileName);
+      }
+    }
+  };
+
+  const uploadProfileImage = async () => {
+    if (!profileImage) return null;
+
+    setUploadingProfileImage(true);
+    try {
+      const fileExt = profileImage.name.split('.').pop();
+      const filePath = `${user?.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profiles')
+        .upload(filePath, profileImage);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('profiles').getPublicUrl(filePath);
+      
+      return data.publicUrl;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error uploading profile image",
+        description: error.message,
+      });
+      return null;
+    } finally {
+      setUploadingProfileImage(false);
+    }
+  };
+
+  const uploadDesignImage = async () => {
+    if (!designImage) return null;
+
+    setUploadingDesign(true);
+    try {
+      const fileExt = designImage.name.split('.').pop();
+      const filePath = `${user?.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('designs')
+        .upload(filePath, designImage);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('designs').getPublicUrl(filePath);
+      
+      return data.publicUrl;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error uploading design image",
+        description: error.message,
+      });
+      return null;
+    } finally {
+      setUploadingDesign(false);
+    }
+  };
+
+  const updateProfile = async (values: z.infer<typeof profileFormSchema>) => {
+    try {
+      setIsLoading(true);
+      
+      // Upload profile image if selected
+      let avatar_url = profileData?.avatar_url;
+      if (profileImage) {
+        const publicUrl = await uploadProfileImage();
+        if (publicUrl) {
+          avatar_url = publicUrl;
+        }
+      }
+
+      const updates = {
+        username: values.username,
+        contact_details: values.contact_number,
+        bio: values.bio,
+        avatar_url,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
+      });
+      
+      // Reset form and refresh data
+      setIsEditing(false);
+      fetchProfileData();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error updating profile",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const uploadDesign = async (values: z.infer<typeof designFormSchema>) => {
+    try {
+      // If we have a generated image, use that, otherwise upload the selected image
+      let imageUrl;
+      
+      if (generatedImage) {
+        imageUrl = generatedImage;
+      } else {
+        // Upload design image
+        imageUrl = await uploadDesignImage();
+        if (!imageUrl) return;
+      }
+
+      // Insert design into database
+      const { error } = await supabase
+        .from('designs')
+        .insert({
+          user_id: user?.id,
+          title: values.title,
+          image_url: imageUrl,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Design uploaded",
+        description: "Your design has been uploaded successfully",
+      });
+      
+      // Reset form and refresh designs
+      designForm.reset();
+      setDesignImage(null);
+      setGeneratedImage(null);
+      fetchDesigns();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error uploading design",
+        description: error.message,
+      });
+    }
+  };
+
+  const generateDesignWithAI = async () => {
+    if (!aiPrompt) {
+      toast({
+        variant: "destructive",
+        title: "Prompt required",
+        description: "Please enter a prompt for the AI to generate a design",
+      });
+      return;
+    }
+
+    setGeneratingImage(true);
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image');
+      }
+
+      const data = await response.json();
+      setGeneratedImage(data.image);
+      
+      // Set the AI prompt as the default title
+      const title = aiPrompt.split(' ').slice(0, 5).join(' ') + '...';
+      designForm.setValue("title", title);
+      setDesignTitle(title);
+      
+      toast({
+        title: "Image generated",
+        description: "AI has generated your design successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error generating image",
+        description: error.message,
+      });
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
+  const toggleLikeDesign = async (designId: string, currentlyLiked: boolean) => {
+    try {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Authentication required",
+          description: "You need to be logged in to like designs",
+        });
+        return;
+      }
+
+      if (currentlyLiked) {
+        // Unlike the design
+        const { error } = await supabase
+          .from('design_likes')
+          .delete()
+          .eq('design_id', designId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Like the design
+        const { error } = await supabase
+          .from('design_likes')
+          .insert({
+            design_id: designId,
+            user_id: user.id,
+          });
+
+        if (error) throw error;
+      }
+
+      // Update designs state
+      setDesigns(designs.map(design => {
+        if (design.id === designId) {
+          return {
+            ...design,
+            liked_by_user: !currentlyLiked,
+            design_likes: {
+              count: currentlyLiked 
+                ? design.design_likes.count - 1 
+                : design.design_likes.count + 1
+            }
+          };
+        }
+        return design;
+      }));
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error updating like",
+        description: error.message,
+      });
+    }
+  };
+
+  const toggleSaveDesign = async (designId: string, currentlySaved: boolean) => {
+    try {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Authentication required",
+          description: "You need to be logged in to save designs",
+        });
+        return;
+      }
+
+      if (currentlySaved) {
+        // Unsave the design
+        const { error } = await supabase
+          .from('design_saves')
+          .delete()
+          .eq('design_id', designId)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Save the design
+        const { error } = await supabase
+          .from('design_saves')
+          .insert({
+            design_id: designId,
+            user_id: user.id,
+          });
+
+        if (error) throw error;
+      }
+
+      // Update designs state
+      setDesigns(designs.map(design => {
+        if (design.id === designId) {
+          return {
+            ...design,
+            saved_by_user: !currentlySaved,
+            design_saves: {
+              count: currentlySaved 
+                ? design.design_saves.count - 1 
+                : design.design_saves.count + 1
+            }
+          };
+        }
+        return design;
+      }));
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error updating save",
+        description: error.message,
+      });
+    }
+  };
+
+  if (isLoading && !profileData) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Architect Not Found</h2>
-            <p className="mb-4">The architect profile you're looking for doesn't exist or has been removed.</p>
-            <Button asChild>
-              <a href="/architects">Browse Architects</a>
-            </Button>
-          </div>
+          <Loader2 className="h-10 w-10 animate-spin text-design-primary" />
         </main>
         <Footer />
       </div>
@@ -310,123 +506,390 @@ const ArchitectProfile = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-grow bg-gray-50 py-12">
-        <div className="container mx-auto">
-          {/* Architect Header */}
-          <div className="bg-white p-8 rounded-lg shadow-sm mb-8">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <img
-                src={architect.profileImage}
-                alt={architect.name}
-                className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-md"
-              />
+              <div className="relative">
+                <Avatar className="h-32 w-32 border-4 border-white shadow-md">
+                  {profileImageUrl ? (
+                    <AvatarImage src={profileImageUrl} alt={profileData?.username || 'Profile'} />
+                  ) : (
+                    <AvatarFallback className="bg-design-primary text-white text-3xl">
+                      {profileData?.username?.charAt(0).toUpperCase() || <User />}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                {isEditing && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="absolute bottom-0 right-0 rounded-full bg-white"
+                    onClick={() => profileImageRef.current?.click()}
+                    disabled={uploadingProfileImage}
+                  >
+                    {uploadingProfileImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                    <input
+                      ref={profileImageRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfileImageChange}
+                      disabled={uploadingProfileImage}
+                    />
+                  </Button>
+                )}
+              </div>
               <div className="flex-grow">
                 <div className="flex flex-wrap justify-between items-start gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold font-playfair mb-1">{architect.name}</h1>
-                    <p className="text-lg text-design-primary mb-2">{architect.specialty}</p>
-                    <div className="flex items-center text-muted-foreground mb-3">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      <span>{architect.location}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {architect.tags.map((tag: string, index: number) => (
-                        <Badge key={index} variant="outline">{tag}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button onClick={handleContact}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Contact {architect.name.split(' ')[0]}
-                    </Button>
-                    {architect.available ? (
-                      <Badge className="bg-green-500 hover:bg-green-600 self-end">
-                        Available for Projects
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="self-end">
-                        Currently Unavailable
-                      </Badge>
+                    <h1 className="text-3xl font-bold font-playfair mb-1">
+                      {profileData?.username || 'Architect'}
+                    </h1>
+                    <p className="text-design-primary mb-2">Architect</p>
+                    {!isEditing && profileData?.bio && (
+                      <p className="text-muted-foreground mt-2 max-w-2xl">{profileData.bio}</p>
                     )}
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-6 mt-4">
-                  <div className="flex items-center">
-                    <Star className="h-5 w-5 text-yellow-400 mr-1" />
-                    <span className="font-medium">{architect.rating}</span>
-                    <span className="text-muted-foreground text-sm ml-1">Rating</span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-design-primary mr-1" />
-                    <span className="font-medium">{architect.projects}</span>
-                    <span className="text-muted-foreground text-sm ml-1">Projects</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-design-primary mr-1" />
-                    <span className="font-medium">{architect.experience}</span>
-                    <span className="text-muted-foreground text-sm ml-1">Experience</span>
-                  </div>
+                  <Button
+                    variant={isEditing ? "outline" : "default"}
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    {isEditing ? "Cancel" : "Edit Profile"}
+                  </Button>
                 </div>
               </div>
             </div>
+
+            {isEditing && (
+              <div className="mt-8">
+                <Form {...profileForm}>
+                  <form onSubmit={profileForm.handleSubmit(updateProfile)} className="space-y-6">
+                    <FormField
+                      control={profileForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="contact_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Number</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bio</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Tell us about yourself..."
+                              className="min-h-[100px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="pt-2">
+                      <Button type="submit" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            )}
+
+            {!isEditing && (
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{user?.email}</p>
+                </div>
+                {profileData?.contact_details && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Contact Number</p>
+                    <p className="font-medium">{profileData.contact_details}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Tabs Content */}
-          <Tabs defaultValue="about" className="space-y-8">
-            <TabsList className="mb-6">
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="credentials">Credentials</TabsTrigger>
+          <Tabs defaultValue="designs" className="space-y-6">
+            <TabsList className="mb-4">
+              <TabsTrigger value="designs">My Designs</TabsTrigger>
+              <TabsTrigger value="upload">Upload New Design</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="about" className="space-y-6">
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4 font-playfair">About {architect.name}</h2>
-                <p className="text-muted-foreground">{architect.bio}</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="projects">
-              <h2 className="text-2xl font-semibold mb-6 font-playfair">Projects by {architect.name}</h2>
-              {projects.length > 0 ? (
-                <ProjectGrid projects={projects} />
+            <TabsContent value="designs" className="space-y-6">
+              {designs.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                  <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground opacity-20 mb-4" />
+                  <h3 className="text-xl font-medium mb-2">No designs yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Start by uploading your first design or generate one with AI.
+                  </p>
+                  <Button onClick={() => document.querySelector('[data-value="upload"]')?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload a Design
+                  </Button>
+                </div>
               ) : (
-                <div className="bg-white p-8 rounded-lg shadow-sm text-center">
-                  <p className="text-muted-foreground">No projects available at this time.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {designs.map((design) => (
+                    <Card key={design.id} className="overflow-hidden">
+                      <div className="relative pb-[66%] bg-gray-100">
+                        <img
+                          src={design.image_url}
+                          alt={design.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-medium truncate flex-grow">{design.title}</h3>
+                          <div className="flex space-x-2 ml-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className={design.liked_by_user ? "text-red-500" : "text-gray-500"}
+                              onClick={() => toggleLikeDesign(design.id, design.liked_by_user)}
+                            >
+                              <Heart className="h-5 w-5" fill={design.liked_by_user ? "currentColor" : "none"} />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className={design.saved_by_user ? "text-yellow-500" : "text-gray-500"}
+                              onClick={() => toggleSaveDesign(design.id, design.saved_by_user)}
+                            >
+                              <Bookmark className="h-5 w-5" fill={design.saved_by_user ? "currentColor" : "none"} />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex space-x-4 text-sm text-muted-foreground mt-2">
+                          <span className="flex items-center">
+                            <Heart className="h-4 w-4 mr-1" /> {design.design_likes?.count || 0}
+                          </span>
+                          <span className="flex items-center">
+                            <Bookmark className="h-4 w-4 mr-1" /> {design.design_saves?.count || 0}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </TabsContent>
             
-            <TabsContent value="credentials" className="space-y-6">
-              <div className="bg-white p-8 rounded-lg shadow-sm">
-                <h2 className="text-2xl font-semibold mb-6 font-playfair">Credentials</h2>
-                
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium mb-3">Education</h3>
-                  <p className="text-muted-foreground">{architect.education}</p>
-                </div>
-                
-                <div className="mb-8">
-                  <h3 className="text-lg font-medium mb-3">Awards & Recognition</h3>
-                  <ul className="space-y-2">
-                    {architect.awards.map((award: string, index: number) => (
-                      <li key={index} className="flex items-center">
-                        <div className="h-2 w-2 rounded-full bg-design-primary mr-2"></div>
-                        {award}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Languages</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {architect.languages.map((language: string, index: number) => (
-                      <Badge key={index} variant="secondary">{language}</Badge>
-                    ))}
+            <TabsContent value="upload">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-semibold mb-4 font-playfair">Upload New Design</h2>
+                    <p className="text-muted-foreground">
+                      Share your architectural designs with the community or generate a design with AI.
+                    </p>
                   </div>
-                </div>
-              </div>
+
+                  <Form {...designForm}>
+                    <form onSubmit={designForm.handleSubmit(uploadDesign)} className="space-y-6">
+                      <FormField
+                        control={designForm.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Design Title</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Enter a title for your design" 
+                                value={designTitle}
+                                onChange={(e) => {
+                                  setDesignTitle(e.target.value);
+                                  field.onChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {generatedImage ? (
+                        <div className="mt-4">
+                          <Label className="block mb-2">Generated Design</Label>
+                          <div className="relative pb-[66%] bg-gray-100 rounded-md overflow-hidden">
+                            <img
+                              src={generatedImage}
+                              alt="AI Generated Design"
+                              className="absolute inset-0 w-full h-full object-contain"
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="mt-2"
+                            onClick={() => setGeneratedImage(null)}
+                          >
+                            Remove Generated Image
+                          </Button>
+                        </div>
+                      ) : designImage ? (
+                        <div className="mt-4">
+                          <Label className="block mb-2">Selected Design</Label>
+                          <div className="relative pb-[66%] bg-gray-100 rounded-md overflow-hidden">
+                            <img
+                              src={URL.createObjectURL(designImage)}
+                              alt="Selected Design"
+                              className="absolute inset-0 w-full h-full object-contain"
+                            />
+                          </div>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="mt-2"
+                            onClick={() => {
+                              setDesignImage(null);
+                              if (designImageRef.current) {
+                                designImageRef.current.value = '';
+                              }
+                            }}
+                          >
+                            Remove Selected Image
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <Label className="block mb-2">Upload Design</Label>
+                            <div 
+                              className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-design-primary transition-colors"
+                              onClick={() => designImageRef.current?.click()}
+                            >
+                              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground mb-1">Click to upload</p>
+                              <p className="text-xs text-muted-foreground">SVG, PNG, JPG or GIF (max. 10MB)</p>
+                              <input
+                                ref={designImageRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleDesignImageChange}
+                              />
+                            </div>
+                          </div>
+                          
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <div>
+                                <Label className="block mb-2">Generate with AI</Label>
+                                <div className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-design-primary transition-colors">
+                                  <PenSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground mb-1">Generate with AI</p>
+                                  <p className="text-xs text-muted-foreground">Create a design using AI</p>
+                                </div>
+                              </div>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Generate Design with AI</DialogTitle>
+                              </DialogHeader>
+                              <div className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                  <Label htmlFor="ai-prompt">Describe the design</Label>
+                                  <Textarea 
+                                    id="ai-prompt"
+                                    placeholder="Modern minimalist house with large windows and a flat roof..."
+                                    value={aiPrompt}
+                                    onChange={(e) => setAiPrompt(e.target.value)}
+                                    className="min-h-[100px]"
+                                  />
+                                </div>
+                                {generatingImage && (
+                                  <div className="text-center p-4">
+                                    <Loader2 className="h-8 w-8 mx-auto animate-spin text-design-primary mb-2" />
+                                    <p className="text-sm text-muted-foreground">Generating your design...</p>
+                                  </div>
+                                )}
+                                {generatedImage && (
+                                  <div className="relative pb-[66%] bg-gray-100 rounded-md overflow-hidden">
+                                    <img
+                                      src={generatedImage}
+                                      alt="AI Generated Design"
+                                      className="absolute inset-0 w-full h-full object-contain"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex justify-end">
+                                <Button 
+                                  type="button" 
+                                  onClick={generateDesignWithAI}
+                                  disabled={!aiPrompt || generatingImage}
+                                >
+                                  {generatingImage ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Generating...
+                                    </>
+                                  ) : (
+                                    <>Generate</>
+                                  )}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      )}
+
+                      <div className="pt-2">
+                        <Button 
+                          type="submit" 
+                          disabled={
+                            (!designImage && !generatedImage) || 
+                            uploadingDesign || 
+                            !designTitle
+                          }
+                          className="w-full"
+                        >
+                          {uploadingDesign ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>Upload Design</>
+                          )}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -436,4 +899,4 @@ const ArchitectProfile = () => {
   );
 };
 
-export default ArchitectProfile;
+export default ArchitectProfilePage;
