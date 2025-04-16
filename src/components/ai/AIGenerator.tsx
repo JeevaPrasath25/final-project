@@ -1,25 +1,15 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sparkles, RefreshCcw, Download, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { createClient } from "@supabase/supabase-js";
 
-const samplePrompts = [
-  "A minimalist single-story house with large windows and a green roof",
-  "A modern Mediterranean villa with a courtyard and pool",
-  "A rustic mountain cabin with large windows facing a lake view",
-  "A futuristic urban apartment with sustainable features"
-];
-
-// Sample AI-generated images for demo purposes
-const sampleImages = [
-  "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-  "https://images.unsplash.com/photo-1600210492493-0946911123ea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-];
+const supabase = createClient(
+  "https://olwapbbjgyahmtpgbrgt.supabase.co", 
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sd2FwYmJqZ3lhaG10cGdicmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ3MDcxNDAsImV4cCI6MjA2MDI4MzE0MH0.Dpkk9f-93mLciLrvbfjTkm9b7c4UVjB1qmdS2mTQJpM"
+);
 
 const AIGenerator = () => {
   const [prompt, setPrompt] = useState("");
@@ -27,7 +17,7 @@ const AIGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({
         title: "Empty prompt",
@@ -39,17 +29,30 @@ const AIGenerator = () => {
 
     setIsGenerating(true);
 
-    // Simulate AI generation with a delay
-    setTimeout(() => {
-      // For demo purposes, using sample images
-      setGeneratedImages(sampleImages);
-      setIsGenerating(false);
-      
-      toast({
-        title: "Design generated",
-        description: "Your dream home designs have been created.",
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: JSON.stringify({ prompt })
       });
-    }, 2000);
+
+      if (error) throw error;
+
+      if (data?.image) {
+        setGeneratedImages([data.image]);
+        toast({
+          title: "Design generated",
+          description: "Your dream home design has been created.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "Unable to generate image. Please try again.",
+        variant: "destructive"
+      });
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSamplePrompt = (sample: string) => {
@@ -104,7 +107,7 @@ const AIGenerator = () => {
           </div>
 
           <div className="flex justify-between">
-            <Button variant="outline" size="sm" onClick={handleCopyPrompt}>
+            <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(prompt)}>
               <Copy className="h-4 w-4 mr-2" />
               Copy
             </Button>
@@ -136,30 +139,26 @@ const AIGenerator = () => {
                     className="w-full h-64 object-cover rounded-lg"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-                    <Button variant="outline" size="sm" className="text-white border-white hover:bg-white/20">
-                      <Download className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-white border-white hover:bg-white/20">
-                      <RefreshCcw className="h-4 w-4 mr-2" />
-                      Regenerate
-                    </Button>
-                  </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-white border-white hover:bg-white/20"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = image;
+                        link.download = `design_${index + 1}.png`;
+                        link.click();
+                      }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
                 </div>
-              ))}
-            </div>
-
-            <div className="mt-10 text-center">
-              <p className="text-muted-foreground mb-4">
-                Love one of these designs? Connect with an architect who can bring it to life.
-              </p>
-              <Button asChild>
-                <a href="/architects">Find an Architect</a>
-              </Button>
-            </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
