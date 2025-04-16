@@ -20,6 +20,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
+import { supabase } from "@/integrations/supabase/client";
 
 const Navbar = () => {
   const isMobile = useIsMobile();
