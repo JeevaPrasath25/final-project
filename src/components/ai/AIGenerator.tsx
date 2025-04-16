@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sparkles, RefreshCcw, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 const samplePrompts = [
@@ -18,6 +17,7 @@ const AIGenerator = () => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -31,6 +31,7 @@ const AIGenerator = () => {
     }
 
     setIsGenerating(true);
+    setError(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-image', {
@@ -45,14 +46,20 @@ const AIGenerator = () => {
           title: "Design generated",
           description: "Your dream home design has been created.",
         });
+      } else if (data?.error) {
+        throw new Error(data.error + (data.details ? `: ${data.details}` : ''));
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error details:', error);
+      
+      const errorMessage = error.message || "Unable to generate image. Please try again.";
+      setError(errorMessage);
+      
       toast({
         title: "Generation Failed",
-        description: "Unable to generate image. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
-      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -100,6 +107,13 @@ const AIGenerator = () => {
               </Button>
             ))}
           </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+              <p className="font-medium">Error:</p>
+              <p>{error}</p>
+            </div>
+          )}
 
           <div className="flex justify-between">
             <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(prompt)}>

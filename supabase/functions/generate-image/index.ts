@@ -15,8 +15,23 @@ serve(async (req) => {
 
   try {
     const { prompt } = await req.json()
+    
+    // Get the Hugging Face access token from environment variables
+    const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
+    
+    if (!huggingFaceToken) {
+      console.error('HUGGING_FACE_ACCESS_TOKEN is not set')
+      return new Response(
+        JSON.stringify({ 
+          error: 'Configuration error', 
+          details: 'API token not configured' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
 
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    console.log('Making request to Hugging Face API...')
+    const hf = new HfInference(huggingFaceToken)
 
     const image = await hf.textToImage({
       inputs: prompt,
@@ -27,15 +42,25 @@ serve(async (req) => {
     const arrayBuffer = await image.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
+    console.log('Image generation successful')
     return new Response(
       JSON.stringify({ image: `data:image/png;base64,${base64}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error:', error)
+    
+    // More specific error message
+    const errorMessage = error.message || 'Unknown error'
+    const statusCode = errorMessage.includes('Invalid username or password') ? 401 : 500
+    
     return new Response(
-      JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      JSON.stringify({ 
+        error: 'Image generation failed', 
+        details: errorMessage,
+        tip: statusCode === 401 ? 'Please check if your Hugging Face access token is valid' : 'Please try again later'
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: statusCode }
     )
   }
 })
