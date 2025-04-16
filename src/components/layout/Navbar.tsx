@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   Menu, 
-  Search, 
-  User, 
-  LogIn, 
-  Home, 
-  Users, 
-  Grid, 
-  Sparkles 
+  Search,
+  Home,
+  Users,
+  Grid,
+  Sparkles,
+  LogIn
 } from "lucide-react";
 import { 
   Sheet, 
@@ -19,10 +18,13 @@ import {
   SheetTrigger 
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 const Navbar = () => {
   const isMobile = useIsMobile();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const { user } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b py-3">
@@ -69,15 +71,21 @@ const Navbar = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/login">
-                <LogIn className="h-4 w-4 mr-2" />
-                Login
-              </Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/signup">Sign Up</Link>
-            </Button>
+            {user ? (
+              <UserMenu />
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Login
+                  </Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -108,12 +116,18 @@ const Navbar = () => {
                   </Link>
                   <div className="border-t pt-4 mt-4">
                     <div className="flex flex-col space-y-3">
-                      <Button asChild>
-                        <Link to="/login">Login</Link>
-                      </Button>
-                      <Button variant="outline" asChild>
-                        <Link to="/signup">Sign Up</Link>
-                      </Button>
+                      {user ? (
+                        <Button onClick={() => supabase.auth.signOut()}>Sign Out</Button>
+                      ) : (
+                        <>
+                          <Button asChild>
+                            <Link to="/login">Login</Link>
+                          </Button>
+                          <Button variant="outline" asChild>
+                            <Link to="/signup">Sign Up</Link>
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
