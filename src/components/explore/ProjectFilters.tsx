@@ -50,7 +50,7 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
   };
 
   const resetFilters = () => {
-    const defaultFilters = {
+    const defaultFilters: ProjectFilters = {
       style: "all",
       rooms: "all",
       size: [0, 5000],
