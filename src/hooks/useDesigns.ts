@@ -29,8 +29,8 @@ export const useDesigns = () => {
 
       // Basic select query for designs
       const { data: designsData, error } = await supabase
-        .from("designs")
-        .select("*")
+        .from('designs')
+        .select('*')
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -41,30 +41,30 @@ export const useDesigns = () => {
         (designsData || []).map(async (design) => {
           // Check if user has liked the design
           const { data: likeData, error: likeError } = await supabase
-            .from("design_likes")
-            .select("*")
+            .from('design_likes')
+            .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Check if user has saved the design
           const { data: saveData, error: saveError } = await supabase
-            .from("design_saves")
-            .select("*")
+            .from('design_saves')
+            .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Count likes for the design
           const { count: likesCount } = await supabase
-            .from("design_likes")
-            .select("*", { count: "exact", head: true })
+            .from('design_likes')
+            .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
           // Count saves for the design
           const { count: savesCount } = await supabase
-            .from("design_saves")
-            .select("*", { count: "exact", head: true })
+            .from('design_saves')
+            .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
           return {
