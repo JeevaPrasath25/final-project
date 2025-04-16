@@ -27,12 +27,12 @@ export const useDesigns = () => {
     try {
       if (!user) return;
 
-      // Use a more generic query approach with type casting
-      const { data: designsData, error } = await supabase
-        .from('designs')
+      // Use type assertion to bypass TypeScript checking
+      const { data: designsData, error } = await (supabase
+        .from('designs') as any)
         .select('*')
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false }) as { data: any[], error: any };
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
@@ -40,32 +40,32 @@ export const useDesigns = () => {
       const designsWithUserActions = await Promise.all(
         (designsData || []).map(async (design) => {
           // Check if user has liked the design
-          const { data: likeData, error: likeError } = await supabase
-            .from('design_likes')
+          const { data: likeData, error: likeError } = await (supabase
+            .from('design_likes') as any)
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
-            .maybeSingle() as { data: any, error: any };
+            .maybeSingle();
 
           // Check if user has saved the design
-          const { data: saveData, error: saveError } = await supabase
-            .from('design_saves')
+          const { data: saveData, error: saveError } = await (supabase
+            .from('design_saves') as any)
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
-            .maybeSingle() as { data: any, error: any };
+            .maybeSingle();
 
           // Count likes for the design
-          const { count: likesCount } = await supabase
-            .from('design_likes')
+          const { count: likesCount } = await (supabase
+            .from('design_likes') as any)
             .select('*', { count: "exact", head: true })
-            .eq("design_id", design.id) as { count: number };
+            .eq("design_id", design.id);
 
           // Count saves for the design
-          const { count: savesCount } = await supabase
-            .from('design_saves')
+          const { count: savesCount } = await (supabase
+            .from('design_saves') as any)
             .select('*', { count: "exact", head: true })
-            .eq("design_id", design.id) as { count: number };
+            .eq("design_id", design.id);
 
           return {
             ...design,
@@ -120,14 +120,14 @@ export const useDesigns = () => {
     try {
       if (!user) return false;
 
-      // Use type casting for the insert operation
-      const { error } = await supabase
-        .from('designs')
+      // Use type assertion for the insert operation
+      const { error } = await (supabase
+        .from('designs') as any)
         .insert({
           user_id: user.id,
           title,
           image_url: imageUrl,
-        }) as { error: any };
+        });
 
       if (error) throw error;
 
@@ -162,21 +162,21 @@ export const useDesigns = () => {
 
       if (currentlyLiked) {
         // Unlike the design
-        const { error } = await supabase
-          .from('design_likes')
+        const { error } = await (supabase
+          .from('design_likes') as any)
           .delete()
           .eq('design_id', designId)
-          .eq('user_id', user.id) as { error: any };
+          .eq('user_id', user.id);
 
         if (error) throw error;
       } else {
         // Like the design
-        const { error } = await supabase
-          .from('design_likes')
+        const { error } = await (supabase
+          .from('design_likes') as any)
           .insert({
             design_id: designId,
             user_id: user.id,
-          }) as { error: any };
+          });
 
         if (error) throw error;
       }
@@ -218,21 +218,21 @@ export const useDesigns = () => {
 
       if (currentlySaved) {
         // Unsave the design
-        const { error } = await supabase
-          .from('design_saves')
+        const { error } = await (supabase
+          .from('design_saves') as any)
           .delete()
           .eq('design_id', designId)
-          .eq('user_id', user.id) as { error: any };
+          .eq('user_id', user.id);
 
         if (error) throw error;
       } else {
         // Save the design
-        const { error } = await supabase
-          .from('design_saves')
+        const { error } = await (supabase
+          .from('design_saves') as any)
           .insert({
             design_id: designId,
             user_id: user.id,
-          }) as { error: any };
+          });
 
         if (error) throw error;
       }
