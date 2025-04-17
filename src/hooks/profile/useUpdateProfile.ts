@@ -19,8 +19,6 @@ export const useUpdateProfile = (
       if (!user) return false;
       
       console.log("Starting profile update for user:", user.id);
-      console.log("Current profile data:", profileData);
-      console.log("Update values:", values);
       
       // Upload profile image if one is selected
       let avatar_url = profileData?.avatar_url;
@@ -30,38 +28,39 @@ export const useUpdateProfile = (
         console.log("New profile image URL:", avatar_url);
       }
 
-      // Create a clean update object with only non-null values
+      // Create a clean update object
       const updates = {
         id: user.id,
         username: values.username || profileData?.username,
         email: user.email,
         role: 'architect',
-        contact_details: values.contact_number || null,
-        bio: values.bio || null,
+        contact_details: values.contact_number || profileData?.contact_details || null,
+        bio: values.bio || profileData?.bio || null,
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
-        experience: values.experience || null,
-        skills: values.skills || null,
-        education: values.education || null,
-        social_links: values.location || null,
-        contact_email: values.business_email || null
+        experience: values.experience || profileData?.experience || null,
+        skills: values.skills || profileData?.skills || null,
+        education: values.education || profileData?.education || null,
+        social_links: values.location || profileData?.social_links || null,
+        contact_email: values.business_email || profileData?.contact_email || null
       };
 
       console.log("Sending profile update:", updates);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .upsert(updates, { 
           onConflict: 'id',
           ignoreDuplicates: false,
-        })
-        .select();
+        });
 
       if (error) {
         console.error("Profile update error:", error);
         throw error;
       }
 
+      console.log("Profile updated successfully");
+      
       // Fetch updated profile data
       const { data: updatedProfileData, error: fetchError } = await supabase
         .from('users')
