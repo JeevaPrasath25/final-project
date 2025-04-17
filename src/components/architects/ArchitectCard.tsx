@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Star, Bookmark, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -20,6 +20,9 @@ interface ArchitectProps {
 }
 
 const ArchitectCard = ({ architect }: { architect: ArchitectProps }) => {
+  // Get first letter of name for avatar fallback
+  const nameInitial = architect.name ? architect.name.charAt(0).toUpperCase() : 'A';
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="flex flex-col md:flex-row">
@@ -27,7 +30,7 @@ const ArchitectCard = ({ architect }: { architect: ArchitectProps }) => {
         <div className="p-6 flex flex-col items-center md:items-start md:w-1/3 border-b md:border-b-0 md:border-r">
           <Avatar className="h-24 w-24 mb-4">
             <AvatarImage src={architect.profileImage} alt={architect.name} />
-            <AvatarFallback>{architect.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{nameInitial}</AvatarFallback>
           </Avatar>
 
           <h3 className="text-xl font-semibold mb-1 text-center md:text-left">{architect.name}</h3>

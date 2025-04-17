@@ -1,101 +1,82 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ArchitectCard from "@/components/architects/ArchitectCard";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-// Sample architects data
-const architectsData = [
-  {
-    id: "elena-rodriguez",
-    name: "Elena Rodriguez",
-    profileImage: "https://randomuser.me/api/portraits/women/32.jpg",
-    specialty: "Modern Minimalist Design",
-    bio: "Award-winning architect with over 10 years of experience specializing in sustainable luxury homes that blend seamlessly with their surroundings.",
-    location: "Barcelona, Spain",
-    rating: 4.9,
-    projects: 24,
-    available: true,
-    tags: ["Luxury Homes", "Sustainable", "Minimalist", "Coastal"]
-  },
-  {
-    id: "james-wilson",
-    name: "James Wilson",
-    profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
-    specialty: "Urban Eco Architecture",
-    bio: "Creating innovative urban housing solutions that incorporate green spaces and sustainable technologies for better city living.",
-    location: "Singapore",
-    rating: 4.7,
-    projects: 18,
-    available: true,
-    tags: ["Eco-friendly", "Urban", "Smart Homes", "Contemporary"]
-  },
-  {
-    id: "sophia-chang",
-    name: "Sophia Chang",
-    profileImage: "https://randomuser.me/api/portraits/women/68.jpg",
-    specialty: "Luxury Coastal Homes",
-    bio: "Specializes in designing stunning beachfront properties that maximize ocean views while incorporating sustainable materials and resistant to coastal conditions.",
-    location: "Los Angeles, USA",
-    rating: 4.8,
-    projects: 31,
-    available: false,
-    tags: ["Beachfront", "Luxury", "Contemporary", "Open Concept"]
-  },
-  {
-    id: "marcus-jensen",
-    name: "Marcus Jensen",
-    profileImage: "https://randomuser.me/api/portraits/men/22.jpg",
-    specialty: "Nordic Minimalism",
-    bio: "Bringing Scandinavian design principles to residential architecture with a focus on functionality, light, and connection to nature.",
-    location: "Copenhagen, Denmark",
-    rating: 4.9,
-    projects: 27,
-    available: true,
-    tags: ["Scandinavian", "Minimalist", "Wood", "Natural Light"]
-  },
-  {
-    id: "isabella-rossi",
-    name: "Isabella Rossi",
-    profileImage: "https://randomuser.me/api/portraits/women/42.jpg",
-    specialty: "Mediterranean Villa Design",
-    bio: "Preserving the essence of Mediterranean architecture while incorporating modern amenities and sustainable practices.",
-    location: "Santorini, Greece",
-    rating: 4.6,
-    projects: 22,
-    available: true,
-    tags: ["Mediterranean", "Villa", "Traditional", "Courtyard"]
-  },
-  {
-    id: "daniel-smith",
-    name: "Daniel Smith",
-    profileImage: "https://randomuser.me/api/portraits/men/52.jpg",
-    specialty: "Industrial Conversions",
-    bio: "Transforming industrial spaces into unique living environments that honor the original architecture while adding modern comforts.",
-    location: "Brooklyn, NY",
-    rating: 4.7,
-    projects: 19,
-    available: false,
-    tags: ["Industrial", "Loft", "Conversion", "Urban"]
-  }
-];
+interface Architect {
+  id: string;
+  username: string;
+  bio: string | null;
+  avatar_url: string | null;
+  experience: string | null;
+  skills: string | null;
+  social_links: string | null;
+  role: string;
+}
 
 const Architects = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredArchitects, setFilteredArchitects] = useState(architectsData);
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [filteredArchitects, setFilteredArchitects] = useState<Architect[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch architects from database
+  useEffect(() => {
+    const fetchArchitects = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('role', 'architect');
+
+        if (error) {
+          console.error("Error fetching architects:", error);
+          throw error;
+        }
+
+        console.log("Fetched architects:", data);
+        
+        // Transform data to match ArchitectCard props
+        const architectData = data.map((user: Architect) => ({
+          id: user.id,
+          name: user.username || "Architect",
+          profileImage: user.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg", // default avatar
+          specialty: user.skills || "Architecture Design",
+          bio: user.bio || "Professional architect with design expertise.",
+          location: user.social_links || "Location not specified",
+          rating: 4.5, // Default rating
+          projects: 0, // Default projects count
+          available: true, // Default availability
+          tags: user.experience ? [user.experience] : ["Architecture"]
+        }));
+
+        setArchitects(architectData);
+        setFilteredArchitects(architectData);
+      } catch (error) {
+        console.error("Failed to fetch architects:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchArchitects();
+  }, []);
 
   const handleSearch = () => {
     if (!searchQuery) {
-      setFilteredArchitects(architectsData);
+      setFilteredArchitects(architects);
       return;
     }
 
     const query = searchQuery.toLowerCase();
-    const results = architectsData.filter(
+    const results = architects.filter(
       architect =>
         architect.name.toLowerCase().includes(query) ||
         architect.specialty.toLowerCase().includes(query) ||
@@ -139,7 +120,11 @@ const Architects = () => {
           </div>
 
           {/* Architects grid */}
-          {filteredArchitects.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+          ) : filteredArchitects.length > 0 ? (
             <div className="space-y-8">
               {filteredArchitects.map((architect) => (
                 <ArchitectCard key={architect.id} architect={architect} />
@@ -153,7 +138,7 @@ const Architects = () => {
               </p>
               <Button onClick={() => {
                 setSearchQuery("");
-                setFilteredArchitects(architectsData);
+                setFilteredArchitects(architects);
               }}>
                 Clear Search
               </Button>

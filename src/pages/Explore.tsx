@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProjectFilters, { ProjectFilters as Filters } from "@/components/explore/ProjectFilters";
 import ProjectGrid from "@/components/explore/ProjectGrid";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Sample projects data
-const allSampleProjects = [
+// Sample projects data as fallback
+const sampleProjects = [
   {
     id: 1,
     title: "Minimalist Lakeside Villa",
@@ -106,6 +106,7 @@ interface Design {
   users?: {
     username: string | null;
     social_links: string | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -126,19 +127,24 @@ interface ProjectWithUser {
 }
 
 const Explore = () => {
-  const [filteredProjects, setFilteredProjects] = useState<ProjectWithUser[]>(allSampleProjects);
-  const [allProjects, setAllProjects] = useState<ProjectWithUser[]>(allSampleProjects);
+  const [filteredProjects, setFilteredProjects] = useState<ProjectWithUser[]>([]);
+  const [allProjects, setAllProjects] = useState<ProjectWithUser[]>([]);
   const [filters, setFilters] = useState<Filters>({
     style: "all",
     rooms: "all",
     size: [0, 5000],
     sortBy: "newest",
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Fetch user designs from Supabase
     const fetchDesigns = async () => {
       try {
+        setIsLoading(true);
+        
+        console.log("Fetching designs...");
+        
         const { data: designsData, error } = await supabase
           .from('designs')
           .select(`
@@ -149,21 +155,29 @@ const Explore = () => {
             created_at,
             users (
               username,
-              social_links
+              social_links,
+              avatar_url
             )
           `);
 
         if (error) {
           console.error("Error fetching designs:", error);
+          setAllProjects(sampleProjects);
           return;
         }
 
-        if (!designsData) return;
+        console.log("Fetched designs:", designsData);
+
+        if (!designsData || designsData.length === 0) {
+          console.log("No designs found, using sample projects");
+          setAllProjects(sampleProjects);
+          return;
+        }
 
         // Transform designs to project format
         const userProjects: ProjectWithUser[] = designsData.map((design: any) => ({
           id: design.id,
-          title: design.title,
+          title: design.title || "Untitled Design",
           description: "Design uploaded by an architect",
           imageUrl: design.image_url,
           architect: design.users?.username || "Architect",
@@ -172,14 +186,21 @@ const Explore = () => {
           style: "modern", // Default style
           rooms: 3, // Default
           size: 2000, // Default
-          likes: 0, // Default
+          likes: Math.floor(Math.random() * 100), // Random likes for demo
           date: design.created_at,
+          featured: Math.random() > 0.7 // Random featured status for some designs
         }));
 
+        console.log("Transformed user projects:", userProjects);
+
         // Combine sample projects with user designs
-        setAllProjects([...userProjects, ...allSampleProjects]);
+        const combinedProjects = [...userProjects, ...sampleProjects];
+        setAllProjects(combinedProjects);
       } catch (err) {
         console.error("Error in fetchDesigns:", err);
+        setAllProjects(sampleProjects);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -188,6 +209,11 @@ const Explore = () => {
 
   useEffect(() => {
     // Apply filters
+    if (allProjects.length === 0) {
+      setFilteredProjects([]);
+      return;
+    }
+    
     let result = [...allProjects];
 
     // Filter by style
@@ -253,11 +279,19 @@ const Explore = () => {
             <div className="flex-grow">
               <div className="flex justify-between items-center mb-6">
                 <p className="text-muted-foreground">
-                  Showing {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''}
+                  {isLoading ? (
+                    "Loading designs..."
+                  ) : (
+                    `Showing ${filteredProjects.length} project${filteredProjects.length !== 1 ? 's' : ''}`
+                  )}
                 </p>
               </div>
 
-              {filteredProjects.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+              ) : filteredProjects.length > 0 ? (
                 <ProjectGrid projects={filteredProjects} />
               ) : (
                 <div className="text-center py-12 bg-white rounded-lg border">

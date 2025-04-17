@@ -1,51 +1,101 @@
 
+import { useEffect, useState } from "react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-// Sample architects data
-const featuredArchitects = [
-  {
-    id: "elena-rodriguez",
-    name: "Elena Rodriguez",
-    specialty: "Modern Minimalist Design",
-    profileImage: "https://randomuser.me/api/portraits/women/32.jpg",
-    bio: "Award-winning architect with a focus on sustainable luxury homes.",
-    projects: 24,
-    location: "Barcelona, Spain"
-  },
-  {
-    id: "james-wilson",
-    name: "James Wilson",
-    specialty: "Urban Eco Architecture",
-    profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
-    bio: "Specializes in eco-friendly urban housing solutions and green spaces.",
-    projects: 18,
-    location: "Singapore"
-  },
-  {
-    id: "sophia-chang",
-    name: "Sophia Chang",
-    specialty: "Luxury Coastal Homes",
-    profileImage: "https://randomuser.me/api/portraits/women/68.jpg",
-    bio: "Creating stunning beachfront properties with sustainable materials.",
-    projects: 31,
-    location: "Los Angeles, USA"
-  },
-  {
-    id: "marcus-jensen",
-    name: "Marcus Jensen",
-    specialty: "Nordic Minimalism",
-    profileImage: "https://randomuser.me/api/portraits/men/22.jpg",
-    bio: "Blending functionality with aesthetic minimalism in residential designs.",
-    projects: 27,
-    location: "Copenhagen, Denmark"
-  },
-];
+interface Architect {
+  id: string;
+  name: string;
+  specialty: string;
+  profileImage: string;
+  bio: string;
+  projects: number;
+  location: string;
+}
 
 const FeaturedArchitects = () => {
+  const [featuredArchitects, setFeaturedArchitects] = useState<Architect[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArchitects = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('role', 'architect')
+          .limit(4);
+
+        if (error) {
+          console.error("Error fetching featured architects:", error);
+          throw error;
+        }
+
+        // Transform data to match component props
+        const architectData = data.map((user: any) => ({
+          id: user.id,
+          name: user.username || "Architect",
+          specialty: user.skills || "Architecture Design",
+          profileImage: user.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg", 
+          bio: user.bio || "Professional architect with design expertise.",
+          projects: 0, // Default projects count
+          location: user.social_links || "Location not specified"
+        }));
+
+        setFeaturedArchitects(architectData);
+      } catch (error) {
+        console.error("Failed to fetch featured architects:", error);
+        // Fallback to sample data if there's an error
+        setFeaturedArchitects([
+          {
+            id: "sample-1",
+            name: "Elena Rodriguez",
+            specialty: "Modern Minimalist Design",
+            profileImage: "https://randomuser.me/api/portraits/women/32.jpg",
+            bio: "Award-winning architect with a focus on sustainable luxury homes.",
+            projects: 24,
+            location: "Barcelona, Spain"
+          },
+          {
+            id: "sample-2",
+            name: "James Wilson",
+            specialty: "Urban Eco Architecture",
+            profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
+            bio: "Specializes in eco-friendly urban housing solutions and green spaces.",
+            projects: 18,
+            location: "Singapore"
+          }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchArchitects();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-design-soft-purple/30">
+        <div className="container mx-auto">
+          <SectionHeading
+            title="Our Top Architects"
+            subtitle="Connect with talented architects ready to bring your vision to life"
+            centered
+          />
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 bg-design-soft-purple/30">
       <div className="container mx-auto">
@@ -65,7 +115,7 @@ const FeaturedArchitects = () => {
                 </Avatar>
                 <h3 className="text-lg font-semibold mb-1">{architect.name}</h3>
                 <p className="text-design-primary text-sm mb-3">{architect.specialty}</p>
-                <p className="text-muted-foreground text-sm text-center mb-4">{architect.bio}</p>
+                <p className="text-muted-foreground text-sm text-center mb-4 line-clamp-3">{architect.bio}</p>
                 <div className="flex justify-between w-full text-sm mb-4">
                   <span className="text-muted-foreground">{architect.location}</span>
                   <span className="font-medium">{architect.projects} Projects</span>
