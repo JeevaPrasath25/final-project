@@ -5,9 +5,10 @@ import Footer from "@/components/layout/Footer";
 import ProjectFilters, { ProjectFilters as Filters } from "@/components/explore/ProjectFilters";
 import ProjectGrid from "@/components/explore/ProjectGrid";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { supabase } from "@/integrations/supabase/client";
 
 // Sample projects data
-const allProjects = [
+const allSampleProjects = [
   {
     id: 1,
     title: "Minimalist Lakeside Villa",
@@ -96,14 +97,76 @@ const allProjects = [
   }
 ];
 
+interface Design {
+  id: string;
+  title: string;
+  image_url: string;
+  user_id: string;
+  created_at: string;
+}
+
+interface ProjectWithUser extends Design {
+  architect: string;
+  architectId: string;
+  location: string;
+  style: string;
+  rooms: number;
+  size: number;
+  likes: number;
+  date: string;
+  featured?: boolean;
+  description: string;
+  imageUrl: string;
+}
+
 const Explore = () => {
-  const [filteredProjects, setFilteredProjects] = useState(allProjects);
+  const [filteredProjects, setFilteredProjects] = useState<any[]>(allSampleProjects);
+  const [allProjects, setAllProjects] = useState<any[]>(allSampleProjects);
   const [filters, setFilters] = useState<Filters>({
     style: "all",
     rooms: "all",
     size: [0, 5000],
     sortBy: "newest",
   });
+
+  useEffect(() => {
+    // Fetch user designs from Supabase
+    const fetchDesigns = async () => {
+      // Use any-cast to work with tables not in the type definitions
+      const { data: designsData, error } = await supabase
+        .from('designs')
+        .select(`*, users!inner(username, social_links)`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching designs:", error);
+        return;
+      }
+
+      if (!designsData) return;
+
+      // Transform designs to project format
+      const userProjects = designsData.map((design: any) => ({
+        id: design.id,
+        title: design.title,
+        description: design.description || "A beautiful architectural design",
+        imageUrl: design.image_url,
+        architect: design.users.username,
+        architectId: design.user_id,
+        location: design.users.social_links || "Unknown location",
+        style: "modern", // Default style
+        rooms: 3, // Default
+        size: 2000, // Default
+        likes: 0, // Default
+        date: design.created_at,
+      }));
+
+      // Combine sample projects with user designs
+      setAllProjects([...userProjects, ...allSampleProjects]);
+    };
+
+    fetchDesigns();
+  }, []);
 
   useEffect(() => {
     // Apply filters
@@ -147,7 +210,7 @@ const Explore = () => {
     }
 
     setFilteredProjects(result);
-  }, [filters]);
+  }, [filters, allProjects]);
 
   const handleFilterChange = (newFilters: Filters) => {
     setFilters(newFilters);

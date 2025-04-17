@@ -106,6 +106,15 @@ export const useDesigns = () => {
       const fileExt = designImage.name.split('.').pop();
       const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
+      // First check if designs bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.find(bucket => bucket.name === 'designs')) {
+        await supabase.storage.createBucket('designs', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+      }
+
       const { error: uploadError, data } = await supabase.storage
         .from('designs')
         .upload(fileName, designImage);

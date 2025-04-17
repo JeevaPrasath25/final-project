@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const MyProfile = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -14,10 +14,8 @@ const MyProfile = () => {
     // Only redirect after auth has finished loading
     if (!authLoading) {
       if (user) {
-        // Longer delay to allow profile data to be created if needed
-        setTimeout(() => {
-          navigate(`/architect-profile`);
-        }, 500);
+        // Immediately redirect to architect profile
+        navigate(`/architect-profile`);
       } else {
         toast({
           variant: "destructive",

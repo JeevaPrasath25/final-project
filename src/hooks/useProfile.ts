@@ -51,9 +51,12 @@ export const useProfile = () => {
           throw insertError;
         }
 
-        // Fixed TypeScript error: safely handle null insertData
-        // Use the newProfile data as fallback if insertData is null or empty
-        setProfileData(insertData && insertData.length > 0 ? insertData[0] : newProfile);
+        // TypeScript safe handling of potentially null insertData
+        if (insertData && Array.isArray(insertData) && insertData.length > 0) {
+          setProfileData(insertData[0]);
+        } else {
+          setProfileData(newProfile);
+        }
       } else {
         setProfileData(data);
         
@@ -80,6 +83,15 @@ export const useProfile = () => {
     try {
       const fileExt = profileImage.name.split('.').pop();
       const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+      // First check if profiles bucket exists, if not create it
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.find(bucket => bucket.name === 'profiles')) {
+        await supabase.storage.createBucket('profiles', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('profiles')
@@ -141,13 +153,12 @@ export const useProfile = () => {
 
       if (error) throw error;
 
-      // Fixed TypeScript errors: safely handle potentially null data
-      // Use the updates object as fallback if data is null or empty
-      let updatedProfile = null;
-      if (data !== null && Array.isArray(data) && data.length > 0) {
+      // TypeScript safe handling of potentially null data
+      let updatedProfile = updates; // Default to updates object
+      if (data && Array.isArray(data) && data.length > 0) {
         updatedProfile = data[0];
       }
-      setProfileData(updatedProfile || updates);
+      setProfileData(updatedProfile);
       
       toast({
         title: "Profile updated",
