@@ -43,8 +43,7 @@ export const useProfile = () => {
         const { error: insertError, data: insertData } = await supabase
           .from('users')
           .upsert(newProfile, { 
-            onConflict: 'id',
-            returning: 'representation'
+            onConflict: 'id'
           });
 
         if (insertError) {
@@ -135,13 +134,14 @@ export const useProfile = () => {
       const { error, data } = await supabase
         .from('users')
         .upsert(updates, {
-          onConflict: 'id',
-          returning: 'representation'
+          onConflict: 'id'
         });
 
       if (error) throw error;
 
-      setProfileData(data?.[0] || updates);
+      // Update local state with new data (first item if returned as array)
+      const updatedProfile = Array.isArray(data) ? data[0] : data;
+      setProfileData(updatedProfile || updates);
       
       toast({
         title: "Profile updated",

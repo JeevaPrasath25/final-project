@@ -14,10 +14,10 @@ const MyProfile = () => {
     // Only redirect after auth has finished loading
     if (!authLoading) {
       if (user) {
-        // Small delay to allow profile data to be created if needed
+        // Longer delay to allow profile data to be created if needed
         setTimeout(() => {
           navigate(`/architect-profile`);
-        }, 100);
+        }, 500);
       } else {
         toast({
           variant: "destructive",
