@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface Project {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   imageUrl: string;
@@ -28,10 +28,10 @@ interface ProjectGridProps {
 }
 
 const ProjectGrid = ({ projects }: ProjectGridProps) => {
-  const [likedProjects, setLikedProjects] = useState<number[]>([]);
+  const [likedProjects, setLikedProjects] = useState<(number | string)[]>([]);
   const { toast } = useToast();
 
-  const handleLike = (projectId: number) => {
+  const handleLike = (projectId: number | string) => {
     if (likedProjects.includes(projectId)) {
       setLikedProjects(likedProjects.filter(id => id !== projectId));
       toast({
