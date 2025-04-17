@@ -57,7 +57,6 @@ export const useUpdateProfile = (
         Object.assign(updates, {
           preferences: values.preferences || profileData?.preferences || null,
           project_type: values.project_type || profileData?.project_type || null,
-          budget: values.budget || profileData?.budget || null,
           location: values.location || profileData?.location || null,
         });
       }

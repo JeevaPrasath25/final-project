@@ -44,7 +44,6 @@ const HomeownerProfileForm = ({
       location: profileData?.location || "",
       preferences: profileData?.preferences || "",
       project_type: profileData?.project_type || "",
-      budget: profileData?.budget || "",
     }
   });
 
@@ -63,15 +62,6 @@ const HomeownerProfileForm = ({
     "Outdoor Space",
     "Commercial Space",
     "Other"
-  ];
-
-  const budgetRanges = [
-    "Under $50,000",
-    "$50,000 - $100,000",
-    "$100,000 - $250,000",
-    "$250,000 - $500,000",
-    "$500,000 - $1,000,000",
-    "Over $1,000,000"
   ];
 
   return (
@@ -179,27 +169,6 @@ const HomeownerProfileForm = ({
             type="hidden"
             {...register("project_type")}
             id="project_type"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="budget">Budget Range</Label>
-          <Select defaultValue={profileData?.budget || ""}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select budget range" />
-            </SelectTrigger>
-            <SelectContent>
-              {budgetRanges.map((range) => (
-                <SelectItem key={range} value={range}>
-                  {range}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <input
-            type="hidden"
-            {...register("budget")}
-            id="budget"
           />
         </div>
 
