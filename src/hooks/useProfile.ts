@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ export const useProfile = () => {
       }
 
       if (!data) {
+        // Create initial profile if it doesn't exist
         const newProfile = {
           id: user.id,
           username: user.email?.split('@')[0] || 'Architect',
@@ -37,13 +39,20 @@ export const useProfile = () => {
           updated_at: new Date().toISOString()
         };
 
-        const { error: insertError } = await supabase
+        // Use upsert to avoid conflicts
+        const { error: insertError, data: insertData } = await supabase
           .from('users')
-          .insert(newProfile);
+          .upsert(newProfile, { 
+            onConflict: 'id',
+            returning: 'representation'
+          });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+          throw insertError;
+        }
 
-        setProfileData(newProfile);
+        setProfileData(insertData?.[0] || newProfile);
       } else {
         setProfileData(data);
         
@@ -107,7 +116,10 @@ export const useProfile = () => {
       }
 
       const updates = {
+        id: user.id, // Ensure id is always included
         username: values.username,
+        email: user.email, // Keep email in sync with auth
+        role: 'architect', // Maintain role
         contact_details: values.contact_number,
         bio: values.bio,
         avatar_url,
@@ -119,19 +131,23 @@ export const useProfile = () => {
         contact_email: values.business_email || profileData?.contact_email
       };
 
-      const { error } = await supabase
+      // Use upsert to create or update the profile
+      const { error, data } = await supabase
         .from('users')
-        .update(updates)
-        .eq('id', user.id);
+        .upsert(updates, {
+          onConflict: 'id',
+          returning: 'representation'
+        });
 
       if (error) throw error;
 
+      setProfileData(data?.[0] || updates);
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been updated successfully",
       });
       
-      await fetchProfileData();
       return true;
     } catch (error: any) {
       console.error("Error updating profile:", error);

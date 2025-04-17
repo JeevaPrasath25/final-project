@@ -11,10 +11,13 @@ const MyProfile = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Wait for auth to finish loading before redirecting
+    // Only redirect after auth has finished loading
     if (!authLoading) {
       if (user) {
-        navigate(`/architect-profile`);
+        // Small delay to allow profile data to be created if needed
+        setTimeout(() => {
+          navigate(`/architect-profile`);
+        }, 100);
       } else {
         toast({
           variant: "destructive",
@@ -29,6 +32,7 @@ const MyProfile = () => {
   return (
     <div className="flex items-center justify-center h-screen">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <span className="ml-2 text-muted-foreground">Redirecting to profile...</span>
     </div>
   );
 };

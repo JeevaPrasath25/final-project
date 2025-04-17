@@ -35,7 +35,7 @@ export const UserMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-white">
         <DropdownMenuItem asChild>
-          <Link to="/my-profile" className="cursor-pointer">Profile</Link>
+          <Link to="/architect-profile" className="cursor-pointer">Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
