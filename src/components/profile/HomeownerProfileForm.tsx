@@ -12,6 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface HomeownerProfileFormProps {
   profileData: any;
@@ -121,7 +129,7 @@ const HomeownerProfileForm = ({
             placeholder="Your full name"
           />
           {errors.username && (
-            <p className="text-sm text-red-500">{errors.username.message}</p>
+            <p className="text-sm text-red-500">{errors.username.message as React.ReactNode}</p>
           )}
         </div>
 
