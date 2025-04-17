@@ -33,7 +33,7 @@ export const UserMenu = () => {
           <User className="h-5 w-5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="bg-white">
         <DropdownMenuItem asChild>
           <Link to="/my-profile" className="cursor-pointer">Profile</Link>
         </DropdownMenuItem>

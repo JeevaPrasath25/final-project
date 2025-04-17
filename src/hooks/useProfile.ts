@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,15 +21,35 @@ export const useProfile = () => {
         .from("users")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
 
-      setProfileData(data);
+      if (!data) {
+        const newProfile = {
+          id: user.id,
+          username: user.email?.split('@')[0] || 'Architect',
+          email: user.email,
+          role: 'architect',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
-      // Get profile image if exists
-      if (data.avatar_url) {
-        setProfileImageUrl(data.avatar_url);
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert(newProfile);
+
+        if (insertError) throw insertError;
+
+        setProfileData(newProfile);
+      } else {
+        setProfileData(data);
+        
+        if (data.avatar_url) {
+          setProfileImageUrl(data.avatar_url);
+        }
       }
     } catch (error: any) {
       console.error("Error fetching profile:", error);
@@ -79,7 +98,6 @@ export const useProfile = () => {
       setIsLoading(true);
       if (!user) return false;
       
-      // Upload profile image if selected
       let avatar_url = profileData?.avatar_url;
       if (profileImage) {
         const publicUrl = await uploadProfileImage();
@@ -94,7 +112,6 @@ export const useProfile = () => {
         bio: values.bio,
         avatar_url,
         updated_at: new Date().toISOString(),
-        // Add additional fields from the profile form
         experience: values.experience || profileData?.experience,
         skills: values.skills || profileData?.skills,
         education: values.education || profileData?.education,
@@ -114,7 +131,6 @@ export const useProfile = () => {
         description: "Your profile has been updated successfully",
       });
       
-      // Refresh profile data
       await fetchProfileData();
       return true;
     } catch (error: any) {
