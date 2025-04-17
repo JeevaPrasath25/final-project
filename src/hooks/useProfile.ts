@@ -51,9 +51,9 @@ export const useProfile = () => {
           throw insertError;
         }
 
-        // Fix for error: 'insertData' is possibly 'null'
-        // Use the newProfile data as fallback if insertData is null
-        setProfileData(insertData?.[0] || newProfile);
+        // Fixed TypeScript error: safely handle null insertData
+        // Use the newProfile data as fallback if insertData is null or empty
+        setProfileData(insertData && insertData.length > 0 ? insertData[0] : newProfile);
       } else {
         setProfileData(data);
         
@@ -141,9 +141,12 @@ export const useProfile = () => {
 
       if (error) throw error;
 
-      // Fix for error: 'data' is possibly 'null'
-      // Update local state with new data, fallback to updates if data is null
-      const updatedProfile = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      // Fixed TypeScript errors: safely handle potentially null data
+      // Use the updates object as fallback if data is null or empty
+      let updatedProfile = null;
+      if (data !== null && Array.isArray(data) && data.length > 0) {
+        updatedProfile = data[0];
+      }
       setProfileData(updatedProfile || updates);
       
       toast({
