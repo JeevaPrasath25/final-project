@@ -17,12 +17,6 @@ export interface Design {
   design_saves: { count: number };
 }
 
-// Create a type for the Supabase client with 'any' for unknown tables
-type AnyTable = any;
-type SupabaseAnyQuery = {
-  from: (table: string) => AnyTable;
-};
-
 export const useDesigns = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -35,9 +29,9 @@ export const useDesigns = () => {
     try {
       if (!user) return;
 
-      // Get the user's designs
-      const { data: designsData, error } = await supabase
-        .from('designs')
+      // Get the user's designs - using type assertion to work around type limitations
+      const { data: designsData, error } = await (supabase
+        .from('designs') as any)
         .select('*')
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -48,30 +42,30 @@ export const useDesigns = () => {
       const designsWithUserActions = await Promise.all(
         (designsData || []).map(async (design) => {
           // Check if user has liked the design
-          const { data: likeData, error: likeError } = await supabase
-            .from('design_likes')
+          const { data: likeData, error: likeError } = await (supabase
+            .from('design_likes') as any)
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Check if user has saved the design
-          const { data: saveData, error: saveError } = await supabase
-            .from('design_saves')
+          const { data: saveData, error: saveError } = await (supabase
+            .from('design_saves') as any)
             .select('*')
             .eq("design_id", design.id)
             .eq("user_id", user.id)
             .maybeSingle();
 
           // Count likes for the design
-          const { count: likesCount, error: likesCountError } = await supabase
-            .from('design_likes')
+          const { count: likesCount, error: likesCountError } = await (supabase
+            .from('design_likes') as any)
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
           // Count saves for the design
-          const { count: savesCount, error: savesCountError } = await supabase
-            .from('design_saves')
+          const { count: savesCount, error: savesCountError } = await (supabase
+            .from('design_saves') as any)
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
@@ -140,8 +134,8 @@ export const useDesigns = () => {
       if (!user) return false;
       setUploadingDesign(true);
       
-      const { error, data } = await supabase
-        .from('designs')
+      const { error, data } = await (supabase
+        .from('designs') as any)
         .insert({
           user_id: user.id,
           title,
@@ -185,8 +179,8 @@ export const useDesigns = () => {
 
       if (currentlyLiked) {
         // Unlike the design
-        const { error } = await supabase
-          .from('design_likes')
+        const { error } = await (supabase
+          .from('design_likes') as any)
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
@@ -194,8 +188,8 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Like the design
-        const { error } = await supabase
-          .from('design_likes')
+        const { error } = await (supabase
+          .from('design_likes') as any)
           .insert({
             design_id: designId,
             user_id: user.id,
@@ -242,8 +236,8 @@ export const useDesigns = () => {
 
       if (currentlySaved) {
         // Unsave the design
-        const { error } = await supabase
-          .from('design_saves')
+        const { error } = await (supabase
+          .from('design_saves') as any)
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
@@ -251,8 +245,8 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Save the design
-        const { error } = await supabase
-          .from('design_saves')
+        const { error } = await (supabase
+          .from('design_saves') as any)
           .insert({
             design_id: designId,
             user_id: user.id,
