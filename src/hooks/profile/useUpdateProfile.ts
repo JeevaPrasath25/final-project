@@ -18,47 +18,47 @@ export const useUpdateProfile = (
       setIsUpdating(true);
       if (!user) return false;
       
-      let avatar_url = profileData?.avatar_url;
+      console.log("Starting profile update for user:", user.id);
+      console.log("Current profile data:", profileData);
+      console.log("Update values:", values);
       
       // Upload profile image if one is selected
+      let avatar_url = profileData?.avatar_url;
       const publicUrl = await uploadProfileImage();
       if (publicUrl) {
         avatar_url = publicUrl;
+        console.log("New profile image URL:", avatar_url);
       }
 
-      // Prepare update data - ensure we don't send any undefined values that could cause JSON errors
+      // Create a clean update object with only non-null values
       const updates = {
         id: user.id,
         username: values.username || profileData?.username,
         email: user.email,
         role: 'architect',
-        contact_details: values.contact_number || profileData?.contact_details || null,
-        bio: values.bio || profileData?.bio || null,
+        contact_details: values.contact_number || null,
+        bio: values.bio || null,
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
-        experience: values.experience || profileData?.experience || null,
-        skills: values.skills || profileData?.skills || null,
-        education: values.education || profileData?.education || null,
-        social_links: values.location || profileData?.social_links || null,
-        contact_email: values.business_email || profileData?.contact_email || null
+        experience: values.experience || null,
+        skills: values.skills || null,
+        education: values.education || null,
+        social_links: values.location || null,
+        contact_email: values.business_email || null
       };
 
-      // Clean the updates object to remove any undefined values
-      Object.keys(updates).forEach(key => {
-        if (updates[key] === undefined) {
-          delete updates[key];
-        }
-      });
-
-      console.log("Sending profile update:", JSON.stringify(updates));
+      console.log("Sending profile update:", updates);
 
       const { error } = await supabase
         .from('users')
-        .update(updates)
-        .eq('id', user.id);
+        .upsert(updates, { 
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        })
+        .select();
 
       if (error) {
-        console.error("Update error:", error);
+        console.error("Profile update error:", error);
         throw error;
       }
 
@@ -74,6 +74,7 @@ export const useUpdateProfile = (
         throw fetchError;
       }
 
+      console.log("Updated profile data:", updatedProfileData);
       setProfileData(updatedProfileData);
       
       toast({
