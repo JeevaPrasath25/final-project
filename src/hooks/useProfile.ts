@@ -39,6 +39,15 @@ export const useProfile = () => {
           updated_at: new Date().toISOString()
         };
 
+        // Check if storage bucket exists
+        const { data: buckets } = await supabase.storage.listBuckets();
+        if (!buckets?.find(bucket => bucket.name === 'profiles')) {
+          await supabase.storage.createBucket('profiles', {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+          });
+        }
+
         // Use upsert to avoid conflicts
         const { error: insertError, data: insertData } = await supabase
           .from('users')

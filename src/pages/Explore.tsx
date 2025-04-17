@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -131,37 +132,39 @@ const Explore = () => {
   useEffect(() => {
     // Fetch user designs from Supabase
     const fetchDesigns = async () => {
-      // Use any-cast to work with tables not in the type definitions
-      const { data: designsData, error } = await (supabase as any)
-        .from('designs')
-        .select(`*, users!inner(username, social_links)`)
-        .order('created_at', { ascending: false });
+      try {
+        const { data: designsData, error } = await supabase
+          .from('designs')
+          .select(`*, users(username, social_links)`);
 
-      if (error) {
-        console.error("Error fetching designs:", error);
-        return;
+        if (error) {
+          console.error("Error fetching designs:", error);
+          return;
+        }
+
+        if (!designsData) return;
+
+        // Transform designs to project format
+        const userProjects = designsData.map((design: any) => ({
+          id: design.id,
+          title: design.title,
+          description: design.description || "A beautiful architectural design",
+          imageUrl: design.image_url,
+          architect: design.users?.username || "Unknown architect",
+          architectId: design.user_id,
+          location: design.users?.social_links || "Unknown location",
+          style: "modern", // Default style
+          rooms: 3, // Default
+          size: 2000, // Default
+          likes: 0, // Default
+          date: design.created_at,
+        }));
+
+        // Combine sample projects with user designs
+        setAllProjects([...userProjects, ...allSampleProjects]);
+      } catch (err) {
+        console.error("Error in fetchDesigns:", err);
       }
-
-      if (!designsData) return;
-
-      // Transform designs to project format
-      const userProjects = designsData.map((design: any) => ({
-        id: design.id,
-        title: design.title,
-        description: design.description || "A beautiful architectural design",
-        imageUrl: design.image_url,
-        architect: design.users.username,
-        architectId: design.user_id,
-        location: design.users.social_links || "Unknown location",
-        style: "modern", // Default style
-        rooms: 3, // Default
-        size: 2000, // Default
-        likes: 0, // Default
-        date: design.created_at,
-      }));
-
-      // Combine sample projects with user designs
-      setAllProjects([...userProjects, ...allSampleProjects]);
     };
 
     fetchDesigns();

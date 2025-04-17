@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,10 +35,8 @@ export const useDesigns = () => {
     try {
       if (!user) return;
 
-      // Use the any-typed supabase query for tables not in the type definitions
-      const anySupabase = supabase as unknown as SupabaseAnyQuery;
-      
-      const { data: designsData, error } = await anySupabase
+      // Get the user's designs
+      const { data: designsData, error } = await supabase
         .from('designs')
         .select('*')
         .eq("user_id", user.id)
@@ -49,7 +48,7 @@ export const useDesigns = () => {
       const designsWithUserActions = await Promise.all(
         (designsData || []).map(async (design) => {
           // Check if user has liked the design
-          const { data: likeData, error: likeError } = await anySupabase
+          const { data: likeData, error: likeError } = await supabase
             .from('design_likes')
             .select('*')
             .eq("design_id", design.id)
@@ -57,7 +56,7 @@ export const useDesigns = () => {
             .maybeSingle();
 
           // Check if user has saved the design
-          const { data: saveData, error: saveError } = await anySupabase
+          const { data: saveData, error: saveError } = await supabase
             .from('design_saves')
             .select('*')
             .eq("design_id", design.id)
@@ -65,13 +64,13 @@ export const useDesigns = () => {
             .maybeSingle();
 
           // Count likes for the design
-          const { count: likesCount } = await anySupabase
+          const { count: likesCount, error: likesCountError } = await supabase
             .from('design_likes')
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
 
           // Count saves for the design
-          const { count: savesCount } = await anySupabase
+          const { count: savesCount, error: savesCountError } = await supabase
             .from('design_saves')
             .select('*', { count: "exact", head: true })
             .eq("design_id", design.id);
@@ -140,17 +139,15 @@ export const useDesigns = () => {
     try {
       if (!user) return false;
       setUploadingDesign(true);
-
-      // Use the any-typed supabase query
-      const anySupabase = supabase as unknown as SupabaseAnyQuery;
       
-      const { error } = await anySupabase
+      const { error, data } = await supabase
         .from('designs')
         .insert({
           user_id: user.id,
           title,
           image_url: imageUrl,
-        });
+        })
+        .select();
 
       if (error) throw error;
 
@@ -186,12 +183,9 @@ export const useDesigns = () => {
         return;
       }
 
-      // Use the any-typed supabase query
-      const anySupabase = supabase as unknown as SupabaseAnyQuery;
-
       if (currentlyLiked) {
         // Unlike the design
-        const { error } = await anySupabase
+        const { error } = await supabase
           .from('design_likes')
           .delete()
           .eq('design_id', designId)
@@ -200,7 +194,7 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Like the design
-        const { error } = await anySupabase
+        const { error } = await supabase
           .from('design_likes')
           .insert({
             design_id: designId,
@@ -246,12 +240,9 @@ export const useDesigns = () => {
         return;
       }
 
-      // Use the any-typed supabase query
-      const anySupabase = supabase as unknown as SupabaseAnyQuery;
-
       if (currentlySaved) {
         // Unsave the design
-        const { error } = await anySupabase
+        const { error } = await supabase
           .from('design_saves')
           .delete()
           .eq('design_id', designId)
@@ -260,7 +251,7 @@ export const useDesigns = () => {
         if (error) throw error;
       } else {
         // Save the design
-        const { error } = await anySupabase
+        const { error } = await supabase
           .from('design_saves')
           .insert({
             design_id: designId,
