@@ -27,6 +27,7 @@ export const useProfile = () => {
         });
       }
       
+      // Query for existing profile by user ID
       const { data, error } = await supabase
         .from("users")
         .select("*")
@@ -38,6 +39,7 @@ export const useProfile = () => {
       }
 
       if (!data) {
+        // Create new profile if doesn't exist
         const newProfile = {
           id: user.id,
           username: user.email?.split('@')[0] || 'Architect',
@@ -49,9 +51,7 @@ export const useProfile = () => {
 
         const { error: insertError, data: insertData } = await supabase
           .from('users')
-          .upsert(newProfile, { 
-            onConflict: 'id'
-          })
+          .upsert(newProfile)
           .select();
 
         if (insertError) {
@@ -99,15 +99,6 @@ export const useProfile = () => {
         });
       }
 
-      // Add public policy to profiles bucket if needed
-      try {
-        await supabase.storage.from('profiles').getPublicUrl(filePath);
-      } catch (error) {
-        // If error occurs, policies might be missing, let's create them manually
-        // Remove the problematic RPC call since it's not available
-        console.log("Storage policies might be missing for profiles bucket");
-      }
-
       const { error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, profileImage, {
@@ -145,21 +136,29 @@ export const useProfile = () => {
         }
       }
 
+      // Prepare update data - ensure we don't send any undefined values that could cause JSON errors
       const updates = {
-        id: user.id, // Ensure id is always included
-        username: values.username,
-        email: user.email, // Keep email in sync with auth
-        role: 'architect', // Maintain role
-        contact_details: values.contact_number,
-        bio: values.bio,
-        avatar_url,
+        id: user.id,
+        username: values.username || profileData?.username,
+        email: user.email,
+        role: 'architect',
+        contact_details: values.contact_number || profileData?.contact_details || null,
+        bio: values.bio || profileData?.bio || null,
+        avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
-        experience: values.experience || profileData?.experience,
-        skills: values.skills || profileData?.skills,
-        education: values.education || profileData?.education,
-        social_links: values.location || profileData?.social_links,
-        contact_email: values.business_email || profileData?.contact_email
+        experience: values.experience || profileData?.experience || null,
+        skills: values.skills || profileData?.skills || null,
+        education: values.education || profileData?.education || null,
+        social_links: values.location || profileData?.social_links || null,
+        contact_email: values.business_email || profileData?.contact_email || null
       };
+
+      // Clean the updates object to remove any undefined values
+      Object.keys(updates).forEach(key => {
+        if (updates[key] === undefined) {
+          delete updates[key];
+        }
+      });
 
       const { error } = await supabase
         .from('users')
