@@ -41,7 +41,6 @@ const HomeownerProfileForm = ({
       username: profileData?.username || "",
       bio: profileData?.bio || "",
       contact_number: profileData?.contact_details || "",
-      location: profileData?.location || "",
       preferences: profileData?.preferences || "",
       project_type: profileData?.project_type || "",
     }
@@ -139,15 +138,6 @@ const HomeownerProfileForm = ({
             id="contact_number"
             {...register("contact_number")}
             placeholder="Your phone number"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input
-            id="location"
-            {...register("location")}
-            placeholder="Your city or region"
           />
         </div>
 

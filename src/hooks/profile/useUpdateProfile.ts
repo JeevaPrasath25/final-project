@@ -57,8 +57,8 @@ export const useUpdateProfile = (
         Object.assign(updates, {
           preferences: values.preferences || profileData?.preferences || null,
           project_type: values.project_type || profileData?.project_type || null,
-          location: values.location || profileData?.location || null,
         });
+        // Removed 'location' field which doesn't exist in the database
       }
 
       console.log("Sending profile update:", updates);
