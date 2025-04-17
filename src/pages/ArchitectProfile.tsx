@@ -11,17 +11,14 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileForm from "@/components/profile/ProfileForm";
 import DesignGrid from "@/components/designs/DesignGrid";
 import DesignUploadForm from "@/components/designs/DesignUploadForm";
-import AiGeneratorDialog from "@/components/designs/AiGeneratorDialog";
 import { useProfile } from "@/hooks/useProfile";
 import { useDesigns } from "@/hooks/useDesigns";
-import { useAiGenerator } from "@/hooks/useAiGenerator";
 
 const ArchitectProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("designs");
   
   const {
@@ -42,18 +39,7 @@ const ArchitectProfilePage = () => {
     uploadDesignImage,
     toggleLikeDesign,
     toggleSaveDesign,
-    generatedImage,
-    setGeneratedImage
   } = useDesigns();
-  
-  const {
-    aiPrompt,
-    setAiPrompt,
-    generatingImage,
-    generatedImage: aiGeneratedImage,
-    setGeneratedImage: setAiGeneratedImage,
-    generateDesignWithAI
-  } = useAiGenerator();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,14 +56,6 @@ const ArchitectProfilePage = () => {
     const success = await updateProfile(values);
     if (success) {
       setIsEditing(false);
-    }
-  };
-  
-  const handleAiImageGenerated = (imageUrl: string | null) => {
-    if (imageUrl) {
-      setGeneratedImage(imageUrl);
-      // Switch to upload tab automatically
-      setActiveTab("upload");
     }
   };
   
@@ -135,7 +113,6 @@ const ArchitectProfilePage = () => {
                   )}
                 </div>
 
-                {/* Additional architect details */}
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-semibold mb-3">Professional Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -210,26 +187,12 @@ const ArchitectProfilePage = () => {
               <DesignUploadForm
                 designImage={designImage}
                 uploadingDesign={uploadingDesign}
-                generatedImage={generatedImage}
                 setDesignImage={setDesignImage}
                 uploadDesign={uploadDesign}
                 uploadDesignImage={uploadDesignImage}
-                setGeneratedImage={setGeneratedImage}
-                onAiGeneratorClick={() => setIsAiDialogOpen(true)}
               />
             </TabsContent>
           </Tabs>
-          
-          <AiGeneratorDialog
-            isOpen={isAiDialogOpen}
-            onClose={() => setIsAiDialogOpen(false)}
-            aiPrompt={aiPrompt}
-            setAiPrompt={setAiPrompt}
-            generatingImage={generatingImage}
-            generatedImage={aiGeneratedImage}
-            generateDesignWithAI={generateDesignWithAI}
-            onImageGenerated={handleAiImageGenerated}
-          />
         </div>
       </main>
       <Footer />

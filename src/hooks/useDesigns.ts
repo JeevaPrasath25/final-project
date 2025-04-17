@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +30,6 @@ export const useDesigns = () => {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [designImage, setDesignImage] = useState<File | null>(null);
   const [uploadingDesign, setUploadingDesign] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   const fetchDesigns = async () => {
     try {
@@ -296,7 +294,5 @@ export const useDesigns = () => {
     toggleLikeDesign,
     toggleSaveDesign,
     fetchDesigns,
-    generatedImage,
-    setGeneratedImage
   };
 };
