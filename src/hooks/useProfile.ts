@@ -51,7 +51,7 @@ export const useProfile = () => {
           throw insertError;
         }
 
-        // TypeScript safe handling of potentially null insertData
+        // TypeScript safe handling of insertData
         if (insertData && Array.isArray(insertData) && insertData.length > 0) {
           setProfileData(insertData[0]);
         } else {
@@ -153,7 +153,7 @@ export const useProfile = () => {
 
       if (error) throw error;
 
-      // TypeScript safe handling of potentially null data
+      // TypeScript safe handling of data
       let updatedProfile = updates; // Default to updates object
       if (data && Array.isArray(data) && data.length > 0) {
         updatedProfile = data[0];

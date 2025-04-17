@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -133,7 +132,7 @@ const Explore = () => {
     // Fetch user designs from Supabase
     const fetchDesigns = async () => {
       // Use any-cast to work with tables not in the type definitions
-      const { data: designsData, error } = await supabase
+      const { data: designsData, error } = await (supabase as any)
         .from('designs')
         .select(`*, users!inner(username, social_links)`)
         .order('created_at', { ascending: false });
