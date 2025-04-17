@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Architect {
+// Interface that matches the database structure
+interface ArchitectUser {
   id: string;
   username: string;
   bio: string | null;
@@ -20,10 +21,24 @@ interface Architect {
   role: string;
 }
 
+// Interface expected by the ArchitectCard component
+export interface ArchitectDisplayData {
+  id: string;
+  name: string;
+  profileImage: string;
+  specialty: string;
+  bio: string;
+  location: string;
+  rating: number;
+  projects: number;
+  available: boolean;
+  tags: string[];
+}
+
 const Architects = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [architects, setArchitects] = useState<Architect[]>([]);
-  const [filteredArchitects, setFilteredArchitects] = useState<Architect[]>([]);
+  const [architects, setArchitects] = useState<ArchitectUser[]>([]);
+  const [displayArchitects, setDisplayArchitects] = useState<ArchitectDisplayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch architects from database
@@ -43,8 +58,11 @@ const Architects = () => {
 
         console.log("Fetched architects:", data);
         
+        // Store original data
+        setArchitects(data);
+        
         // Transform data to match ArchitectCard props
-        const architectData = data.map((user: Architect) => ({
+        const architectData = data.map((user: ArchitectUser) => ({
           id: user.id,
           name: user.username || "Architect",
           profileImage: user.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg", // default avatar
@@ -57,8 +75,7 @@ const Architects = () => {
           tags: user.experience ? [user.experience] : ["Architecture"]
         }));
 
-        setArchitects(architectData);
-        setFilteredArchitects(architectData);
+        setDisplayArchitects(architectData);
       } catch (error) {
         console.error("Failed to fetch architects:", error);
       } finally {
@@ -71,12 +88,24 @@ const Architects = () => {
 
   const handleSearch = () => {
     if (!searchQuery) {
-      setFilteredArchitects(architects);
+      const defaultDisplay = architects.map(architect => ({
+        id: architect.id,
+        name: architect.username || "Architect",
+        profileImage: architect.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
+        specialty: architect.skills || "Architecture Design",
+        bio: architect.bio || "Professional architect with design expertise.",
+        location: architect.social_links || "Location not specified",
+        rating: 4.5,
+        projects: 0,
+        available: true,
+        tags: architect.experience ? [architect.experience] : ["Architecture"]
+      }));
+      setDisplayArchitects(defaultDisplay);
       return;
     }
 
     const query = searchQuery.toLowerCase();
-    const results = architects.filter(
+    const results = displayArchitects.filter(
       architect =>
         architect.name.toLowerCase().includes(query) ||
         architect.specialty.toLowerCase().includes(query) ||
@@ -84,7 +113,7 @@ const Architects = () => {
         architect.tags.some(tag => tag.toLowerCase().includes(query))
     );
 
-    setFilteredArchitects(results);
+    setDisplayArchitects(results);
   };
 
   return (
@@ -124,9 +153,9 @@ const Architects = () => {
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
-          ) : filteredArchitects.length > 0 ? (
+          ) : displayArchitects.length > 0 ? (
             <div className="space-y-8">
-              {filteredArchitects.map((architect) => (
+              {displayArchitects.map((architect) => (
                 <ArchitectCard key={architect.id} architect={architect} />
               ))}
             </div>
@@ -137,8 +166,20 @@ const Architects = () => {
                 Try searching with different keywords
               </p>
               <Button onClick={() => {
+                const defaultDisplay = architects.map(architect => ({
+                  id: architect.id,
+                  name: architect.username || "Architect",
+                  profileImage: architect.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
+                  specialty: architect.skills || "Architecture Design",
+                  bio: architect.bio || "Professional architect with design expertise.",
+                  location: architect.social_links || "Location not specified",
+                  rating: 4.5,
+                  projects: 0,
+                  available: true,
+                  tags: architect.experience ? [architect.experience] : ["Architecture"]
+                }));
                 setSearchQuery("");
-                setFilteredArchitects(architects);
+                setDisplayArchitects(defaultDisplay);
               }}>
                 Clear Search
               </Button>

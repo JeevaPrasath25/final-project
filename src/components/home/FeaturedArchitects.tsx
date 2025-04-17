@@ -6,19 +6,10 @@ import { Button } from "@/components/ui/button";
 import { ChevronRightIcon, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Architect {
-  id: string;
-  name: string;
-  specialty: string;
-  profileImage: string;
-  bio: string;
-  projects: number;
-  location: string;
-}
+import { ArchitectDisplayData } from "@/pages/Architects";
 
 const FeaturedArchitects = () => {
-  const [featuredArchitects, setFeaturedArchitects] = useState<Architect[]>([]);
+  const [featuredArchitects, setFeaturedArchitects] = useState<ArchitectDisplayData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +35,10 @@ const FeaturedArchitects = () => {
           profileImage: user.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg", 
           bio: user.bio || "Professional architect with design expertise.",
           projects: 0, // Default projects count
-          location: user.social_links || "Location not specified"
+          location: user.social_links || "Location not specified",
+          rating: 4.5, // Default rating
+          available: true, // Default availability
+          tags: user.experience ? [user.experience] : ["Architecture"]
         }));
 
         setFeaturedArchitects(architectData);
@@ -59,7 +53,10 @@ const FeaturedArchitects = () => {
             profileImage: "https://randomuser.me/api/portraits/women/32.jpg",
             bio: "Award-winning architect with a focus on sustainable luxury homes.",
             projects: 24,
-            location: "Barcelona, Spain"
+            location: "Barcelona, Spain",
+            rating: 4.9,
+            available: true,
+            tags: ["Minimalist", "Sustainable", "Luxury"]
           },
           {
             id: "sample-2",
@@ -68,7 +65,10 @@ const FeaturedArchitects = () => {
             profileImage: "https://randomuser.me/api/portraits/men/45.jpg",
             bio: "Specializes in eco-friendly urban housing solutions and green spaces.",
             projects: 18,
-            location: "Singapore"
+            location: "Singapore",
+            rating: 4.7,
+            available: true,
+            tags: ["Eco-friendly", "Urban", "Housing"]
           }
         ]);
       } finally {

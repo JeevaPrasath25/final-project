@@ -5,21 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Star, Bookmark, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ArchitectDisplayData } from "@/pages/Architects";
 
-interface ArchitectProps {
-  id: string;
-  name: string;
-  profileImage: string;
-  specialty: string;
-  bio: string;
-  location: string;
-  rating: number;
-  projects: number;
-  available: boolean;
-  tags: string[];
-}
-
-const ArchitectCard = ({ architect }: { architect: ArchitectProps }) => {
+const ArchitectCard = ({ architect }: { architect: ArchitectDisplayData }) => {
   // Get first letter of name for avatar fallback
   const nameInitial = architect.name ? architect.name.charAt(0).toUpperCase() : 'A';
 
