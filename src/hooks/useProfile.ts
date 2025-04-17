@@ -44,7 +44,8 @@ export const useProfile = () => {
           .from('users')
           .upsert(newProfile, { 
             onConflict: 'id'
-          });
+          })
+          .select(); // Add explicit select to get response data
 
         if (insertError) {
           console.error("Error creating profile:", insertError);
@@ -52,7 +53,7 @@ export const useProfile = () => {
         }
 
         // TypeScript safe handling of insertData
-        if (insertData && Array.isArray(insertData) && insertData.length > 0) {
+        if (insertData && insertData[0]) {
           setProfileData(insertData[0]);
         } else {
           setProfileData(newProfile);
@@ -149,13 +150,14 @@ export const useProfile = () => {
         .from('users')
         .upsert(updates, {
           onConflict: 'id'
-        });
+        })
+        .select(); // Add explicit select to get response data
 
       if (error) throw error;
 
       // TypeScript safe handling of data
       let updatedProfile = updates; // Default to updates object
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (data && data[0]) {
         updatedProfile = data[0];
       }
       setProfileData(updatedProfile);
