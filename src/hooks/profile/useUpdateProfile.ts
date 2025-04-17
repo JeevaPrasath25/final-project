@@ -50,7 +50,7 @@ export const useUpdateProfile = (
           experience: values.experience || profileData?.experience || null,
           skills: values.skills || profileData?.skills || null,
           education: values.education || profileData?.education || null,
-          social_links: values.location || profileData?.social_links || null,
+          social_links: values.social_links || profileData?.social_links || null,
           contact_email: values.business_email || profileData?.contact_email || null
         });
       } else if (userRole === 'homeowner') {
@@ -58,7 +58,6 @@ export const useUpdateProfile = (
           preferences: values.preferences || profileData?.preferences || null,
           project_type: values.project_type || profileData?.project_type || null,
         });
-        // Removed 'location' field which doesn't exist in the database
       }
 
       console.log("Sending profile update:", updates);
