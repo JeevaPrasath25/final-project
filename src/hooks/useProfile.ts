@@ -33,6 +33,7 @@ export const useProfile = () => {
         setProfileImageUrl(data.avatar_url);
       }
     } catch (error: any) {
+      console.error("Error fetching profile:", error);
       toast({
         variant: "destructive",
         title: "Error fetching profile",
@@ -61,6 +62,7 @@ export const useProfile = () => {
       
       return data.publicUrl;
     } catch (error: any) {
+      console.error("Error uploading profile image:", error);
       toast({
         variant: "destructive",
         title: "Error uploading profile image",
@@ -75,7 +77,7 @@ export const useProfile = () => {
   const updateProfile = async (values: any) => {
     try {
       setIsLoading(true);
-      if (!user) return;
+      if (!user) return false;
       
       // Upload profile image if selected
       let avatar_url = profileData?.avatar_url;
@@ -92,6 +94,12 @@ export const useProfile = () => {
         bio: values.bio,
         avatar_url,
         updated_at: new Date().toISOString(),
+        // Add additional fields from the profile form
+        experience: values.experience || profileData?.experience,
+        skills: values.skills || profileData?.skills,
+        education: values.education || profileData?.education,
+        social_links: values.location || profileData?.social_links,
+        contact_email: values.business_email || profileData?.contact_email
       };
 
       const { error } = await supabase
@@ -107,9 +115,10 @@ export const useProfile = () => {
       });
       
       // Refresh profile data
-      fetchProfileData();
+      await fetchProfileData();
       return true;
     } catch (error: any) {
+      console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
         title: "Error updating profile",
@@ -134,5 +143,6 @@ export const useProfile = () => {
     uploadingProfileImage,
     setProfileImage,
     updateProfile,
+    fetchProfileData
   };
 };

@@ -20,11 +20,12 @@ import { useDesigns } from "@/hooks/useDesigns";
 import { useAiGenerator } from "@/hooks/useAiGenerator";
 
 const ArchitectProfilePage = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("designs");
   
   const {
     isLoading,
@@ -55,15 +56,16 @@ const ArchitectProfilePage = () => {
     generateDesignWithAI
   } = useAiGenerator();
 
-  if (!user) {
-    toast({
-      variant: "destructive",
-      title: "Authentication required",
-      description: "You need to be logged in to view your profile",
-    });
-    navigate("/login");
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You need to be logged in to view your profile",
+      });
+      navigate("/login");
+    }
+  }, [user, authLoading, navigate, toast]);
   
   const handleProfileFormSubmit = async (values: any) => {
     const success = await updateProfile(values);
@@ -75,12 +77,16 @@ const ArchitectProfilePage = () => {
   const handleAiImageGenerated = (imageUrl: string | null) => {
     if (imageUrl) {
       setGeneratedImage(imageUrl);
-      
-      const title = aiPrompt.split(' ').slice(0, 5).join(' ') + '...';
+      // Switch to upload tab automatically
+      setActiveTab("upload");
     }
   };
+  
+  const handleDesignUploadClick = () => {
+    setActiveTab("upload");
+  };
 
-  if (isLoading && !profileData) {
+  if ((isLoading && !profileData) || authLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -186,7 +192,7 @@ const ArchitectProfilePage = () => {
             )}
           </div>
 
-          <Tabs defaultValue="designs" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="mb-4">
               <TabsTrigger value="designs">My Designs</TabsTrigger>
               <TabsTrigger value="upload">Upload New Design</TabsTrigger>
@@ -197,10 +203,7 @@ const ArchitectProfilePage = () => {
                 designs={designs}
                 onLike={toggleLikeDesign}
                 onSave={toggleSaveDesign}
-                onUploadClick={() => {
-                  const uploadTab = document.querySelector('[data-value="upload"]') as HTMLElement;
-                  uploadTab?.click();
-                }}
+                onUploadClick={handleDesignUploadClick}
               />
             </TabsContent>
             

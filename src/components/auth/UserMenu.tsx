@@ -11,9 +11,11 @@ import {
 import { User, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export const UserMenu = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -21,6 +23,7 @@ export const UserMenu = () => {
       title: "Signed out successfully",
       description: "Come back soon!",
     });
+    navigate("/");
   };
 
   return (
