@@ -103,8 +103,9 @@ export const useProfile = () => {
       try {
         await supabase.storage.from('profiles').getPublicUrl(filePath);
       } catch (error) {
-        // If error occurs, policies might be missing, let's add them
-        await supabase.rpc('create_storage_policy', { bucket_name: 'profiles' });
+        // If error occurs, policies might be missing, let's create them manually
+        // Remove the problematic RPC call since it's not available
+        console.log("Storage policies might be missing for profiles bucket");
       }
 
       const { error: uploadError } = await supabase.storage

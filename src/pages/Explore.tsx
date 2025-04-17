@@ -104,9 +104,9 @@ interface Design {
   user_id: string;
   created_at: string;
   users?: {
-    username: string;
+    username: string | null;
     social_links: string | null;
-  }
+  } | null;
 }
 
 interface ProjectWithUser {
@@ -126,8 +126,8 @@ interface ProjectWithUser {
 }
 
 const Explore = () => {
-  const [filteredProjects, setFilteredProjects] = useState<any[]>(allSampleProjects);
-  const [allProjects, setAllProjects] = useState<any[]>(allSampleProjects);
+  const [filteredProjects, setFilteredProjects] = useState<ProjectWithUser[]>(allSampleProjects);
+  const [allProjects, setAllProjects] = useState<ProjectWithUser[]>(allSampleProjects);
   const [filters, setFilters] = useState<Filters>({
     style: "all",
     rooms: "all",
@@ -161,7 +161,7 @@ const Explore = () => {
         if (!designsData) return;
 
         // Transform designs to project format
-        const userProjects = designsData.map((design: Design) => ({
+        const userProjects: ProjectWithUser[] = designsData.map((design: any) => ({
           id: design.id,
           title: design.title,
           description: "Design uploaded by an architect",
