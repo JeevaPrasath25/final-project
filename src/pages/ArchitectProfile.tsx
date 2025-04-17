@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,7 +53,6 @@ const ArchitectProfilePage = () => {
     generateDesignWithAI
   } = useAiGenerator();
 
-  // Check authentication
   if (!user) {
     toast({
       variant: "destructive",
@@ -75,7 +74,6 @@ const ArchitectProfilePage = () => {
     if (imageUrl) {
       setGeneratedImage(imageUrl);
       
-      // Set the AI prompt as the default title
       const title = aiPrompt.split(' ').slice(0, 5).join(' ') + '...';
     }
   };
@@ -142,7 +140,10 @@ const ArchitectProfilePage = () => {
                 designs={designs}
                 onLike={toggleLikeDesign}
                 onSave={toggleSaveDesign}
-                onUploadClick={() => document.querySelector('[data-value="upload"]')?.click()}
+                onUploadClick={() => {
+                  const uploadTab = document.querySelector('[data-value="upload"]') as HTMLElement;
+                  uploadTab?.click();
+                }}
               />
             </TabsContent>
             
