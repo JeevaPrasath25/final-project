@@ -5,10 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
+  loading: boolean;  // Renamed from isLoading to match the existing code
+  isLoading: boolean;  // Added to maintain compatibility with existing usage
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  user: null, 
+  loading: true,
+  isLoading: true  // Added to match the existing usage in components
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -33,7 +38,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading,
+      isLoading: loading  // Provide isLoading as an alias for loading
+    }}>
       {children}
     </AuthContext.Provider>
   );
