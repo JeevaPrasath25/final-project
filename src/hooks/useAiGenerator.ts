@@ -20,7 +20,9 @@ export const useAiGenerator = () => {
 
     setGeneratingImage(true);
     try {
-      const response = await fetch('/api/generate-image', {
+      console.log("Sending request to generate image with prompt:", aiPrompt);
+      
+      const response = await fetch('https://olwapbbjgyahmtpgbrgt.supabase.co/functions/v1/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,10 +32,16 @@ export const useAiGenerator = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate image');
+        throw new Error(errorData.error || errorData.details || 'Failed to generate image');
       }
 
       const data = await response.json();
+      
+      if (!data.image) {
+        throw new Error('No image returned from API');
+      }
+      
+      console.log("Image generated successfully");
       setGeneratedImage(data.image);
       
       toast({
@@ -43,10 +51,11 @@ export const useAiGenerator = () => {
       
       return data.image;
     } catch (error: any) {
+      console.error("Error generating image:", error);
       toast({
         variant: "destructive",
         title: "Error generating image",
-        description: error.message,
+        description: error.message || "Unknown error occurred",
       });
       return null;
     } finally {

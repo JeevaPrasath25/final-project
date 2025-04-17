@@ -30,7 +30,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('Making request to Hugging Face API...')
+    console.log('Making request to Hugging Face API with prompt:', prompt)
     const hf = new HfInference(huggingFaceToken)
 
     const image = await hf.textToImage({

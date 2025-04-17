@@ -28,10 +28,14 @@ const AiGeneratorDialog = ({
   onImageGenerated
 }: AiGeneratorDialogProps) => {
   const handleGenerateImage = async () => {
-    const imageUrl = await generateDesignWithAI();
-    if (imageUrl) {
-      onImageGenerated(imageUrl);
-      onClose();
+    try {
+      const imageUrl = await generateDesignWithAI();
+      if (imageUrl) {
+        onImageGenerated(imageUrl);
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error in handleGenerateImage:", error);
     }
   };
 
