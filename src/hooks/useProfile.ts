@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +28,6 @@ export const useProfile = () => {
       }
 
       if (!data) {
-        // Create initial profile if it doesn't exist
         const newProfile = {
           id: user.id,
           username: user.email?.split('@')[0] || 'Architect',
@@ -39,29 +37,18 @@ export const useProfile = () => {
           updated_at: new Date().toISOString()
         };
 
-        // Check if storage bucket exists
-        const { data: buckets } = await supabase.storage.listBuckets();
-        if (!buckets?.find(bucket => bucket.name === 'profiles')) {
-          await supabase.storage.createBucket('profiles', {
-            public: true,
-            fileSizeLimit: 10485760, // 10MB
-          });
-        }
-
-        // Use upsert to avoid conflicts
         const { error: insertError, data: insertData } = await supabase
           .from('users')
           .upsert(newProfile, { 
             onConflict: 'id'
           })
-          .select(); // Add explicit select to get response data
+          .select();
 
         if (insertError) {
           console.error("Error creating profile:", insertError);
           throw insertError;
         }
 
-        // TypeScript safe handling of insertData
         if (insertData && insertData[0]) {
           setProfileData(insertData[0]);
         } else {
@@ -94,7 +81,6 @@ export const useProfile = () => {
       const fileExt = profileImage.name.split('.').pop();
       const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // First check if profiles bucket exists, if not create it
       const { data: buckets } = await supabase.storage.listBuckets();
       if (!buckets?.find(bucket => bucket.name === 'profiles')) {
         await supabase.storage.createBucket('profiles', {
@@ -154,17 +140,15 @@ export const useProfile = () => {
         contact_email: values.business_email || profileData?.contact_email
       };
 
-      // Use upsert to create or update the profile
       const { error, data } = await supabase
         .from('users')
         .upsert(updates, {
           onConflict: 'id'
         })
-        .select(); // Add explicit select to get response data
+        .select();
 
       if (error) throw error;
 
-      // TypeScript safe handling of data
       let updatedProfile = updates; // Default to updates object
       if (data && data[0]) {
         updatedProfile = data[0];

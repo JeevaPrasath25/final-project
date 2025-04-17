@@ -1,11 +1,8 @@
-
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Building2, MapPin, Award, Calendar, Mail, Phone } from "lucide-react";
+import { Loader2, Building2, MapPin, Award, Calendar, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/layout/Navbar";

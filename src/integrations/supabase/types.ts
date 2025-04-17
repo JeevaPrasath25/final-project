@@ -9,6 +9,88 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      design_likes: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_likes_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_saves: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_saves_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      designs: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
