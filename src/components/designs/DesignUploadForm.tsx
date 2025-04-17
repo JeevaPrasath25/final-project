@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Upload, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 // Schema for design upload form validation
 const designFormSchema = z.object({
@@ -40,6 +41,7 @@ const DesignUploadForm = ({
 }: DesignUploadFormProps) => {
   const [designTitle, setDesignTitle] = useState("");
   const designImageRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const form = useForm<DesignFormValues>({
     resolver: zodResolver(designFormSchema),
@@ -50,10 +52,22 @@ const DesignUploadForm = ({
 
   const handleDesignImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setDesignImage(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Maximum file size is 10MB",
+        });
+        return;
+      }
+      
+      setDesignImage(file);
       
       // Set the file name as the default title if the title is empty
-      const fileName = e.target.files[0].name.split('.')[0];
+      const fileName = file.name.split('.')[0];
       if (!designTitle) {
         setDesignTitle(fileName);
         form.setValue("title", fileName);
@@ -62,24 +76,43 @@ const DesignUploadForm = ({
   };
 
   const onSubmit = async (values: DesignFormValues) => {
-    // If we have a generated image, use that, otherwise upload the selected image
-    let imageUrl;
-    
-    if (generatedImage) {
-      imageUrl = generatedImage;
-    } else {
-      // Upload design image
-      imageUrl = await uploadDesignImage();
-      if (!imageUrl) return;
-    }
+    try {
+      // If we have a generated image, use that, otherwise upload the selected image
+      let imageUrl;
+      
+      if (generatedImage) {
+        imageUrl = generatedImage;
+      } else {
+        // Upload design image
+        imageUrl = await uploadDesignImage();
+        if (!imageUrl) {
+          toast({
+            variant: "destructive",
+            title: "Upload failed",
+            description: "Failed to upload the image. Please try again.",
+          });
+          return;
+        }
+      }
 
-    // Upload design
-    const success = await uploadDesign(values.title, imageUrl);
-    if (success) {
-      form.reset();
-      setDesignImage(null);
-      setGeneratedImage(null);
-      setDesignTitle("");
+      // Upload design
+      const success = await uploadDesign(values.title, imageUrl);
+      if (success) {
+        form.reset();
+        setDesignImage(null);
+        setGeneratedImage(null);
+        setDesignTitle("");
+        if (designImageRef.current) {
+          designImageRef.current.value = '';
+        }
+      }
+    } catch (error: any) {
+      console.error("Error in design upload:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "An unexpected error occurred",
+      });
     }
   };
 

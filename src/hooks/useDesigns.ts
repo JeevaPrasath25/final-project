@@ -29,6 +29,7 @@ export const useDesigns = () => {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [designImage, setDesignImage] = useState<File | null>(null);
   const [uploadingDesign, setUploadingDesign] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   const fetchDesigns = async () => {
     try {
@@ -88,6 +89,7 @@ export const useDesigns = () => {
 
       setDesigns(designsWithUserActions);
     } catch (error: any) {
+      console.error("Error fetching designs:", error);
       toast({
         variant: "destructive",
         title: "Error fetching designs",
@@ -102,18 +104,19 @@ export const useDesigns = () => {
     setUploadingDesign(true);
     try {
       const fileExt = designImage.name.split('.').pop();
-      const filePath = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('designs')
-        .upload(filePath, designImage);
+        .upload(fileName, designImage);
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from('designs').getPublicUrl(filePath);
+      const { data: urlData } = supabase.storage.from('designs').getPublicUrl(fileName);
       
-      return data.publicUrl;
+      return urlData.publicUrl;
     } catch (error: any) {
+      console.error("Error uploading design image:", error);
       toast({
         variant: "destructive",
         title: "Error uploading design image",
@@ -128,6 +131,7 @@ export const useDesigns = () => {
   const uploadDesign = async (title: string, imageUrl: string) => {
     try {
       if (!user) return false;
+      setUploadingDesign(true);
 
       // Use the any-typed supabase query
       const anySupabase = supabase as unknown as SupabaseAnyQuery;
@@ -151,12 +155,15 @@ export const useDesigns = () => {
       fetchDesigns();
       return true;
     } catch (error: any) {
+      console.error("Error uploading design:", error);
       toast({
         variant: "destructive",
         title: "Error uploading design",
         description: error.message,
       });
       return false;
+    } finally {
+      setUploadingDesign(false);
     }
   };
 
@@ -211,6 +218,7 @@ export const useDesigns = () => {
         return design;
       }));
     } catch (error: any) {
+      console.error("Error updating like:", error);
       toast({
         variant: "destructive",
         title: "Error updating like",
@@ -270,6 +278,7 @@ export const useDesigns = () => {
         return design;
       }));
     } catch (error: any) {
+      console.error("Error updating save:", error);
       toast({
         variant: "destructive",
         title: "Error updating save",
@@ -294,5 +303,7 @@ export const useDesigns = () => {
     toggleLikeDesign,
     toggleSaveDesign,
     fetchDesigns,
+    generatedImage,
+    setGeneratedImage
   };
 };

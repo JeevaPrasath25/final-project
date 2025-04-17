@@ -20,7 +20,7 @@ import { useDesigns } from "@/hooks/useDesigns";
 import { useAiGenerator } from "@/hooks/useAiGenerator";
 
 const ArchitectProfilePage = () => {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
@@ -44,15 +44,17 @@ const ArchitectProfilePage = () => {
     uploadDesign,
     uploadDesignImage,
     toggleLikeDesign,
-    toggleSaveDesign
+    toggleSaveDesign,
+    generatedImage,
+    setGeneratedImage
   } = useDesigns();
   
   const {
     aiPrompt,
     setAiPrompt,
     generatingImage,
-    generatedImage,
-    setGeneratedImage,
+    generatedImage: aiGeneratedImage,
+    setGeneratedImage: setAiGeneratedImage,
     generateDesignWithAI
   } = useAiGenerator();
 
@@ -227,7 +229,7 @@ const ArchitectProfilePage = () => {
             aiPrompt={aiPrompt}
             setAiPrompt={setAiPrompt}
             generatingImage={generatingImage}
-            generatedImage={generatedImage}
+            generatedImage={aiGeneratedImage}
             generateDesignWithAI={generateDesignWithAI}
             onImageGenerated={handleAiImageGenerated}
           />
