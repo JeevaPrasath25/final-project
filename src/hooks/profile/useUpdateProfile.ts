@@ -28,22 +28,39 @@ export const useUpdateProfile = (
         console.log("New profile image URL:", avatar_url);
       }
 
-      // Create a clean update object
+      // Get the user's role
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userRole = authUser?.user_metadata?.role || profileData?.role || 'homeowner';
+
+      // Create a base update object
       const updates = {
         id: user.id,
         username: values.username || profileData?.username,
         email: user.email,
-        role: 'architect',
+        role: userRole,
         contact_details: values.contact_number || profileData?.contact_details || null,
         bio: values.bio || profileData?.bio || null,
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
-        experience: values.experience || profileData?.experience || null,
-        skills: values.skills || profileData?.skills || null,
-        education: values.education || profileData?.education || null,
-        social_links: values.location || profileData?.social_links || null,
-        contact_email: values.business_email || profileData?.contact_email || null
       };
+
+      // Add role-specific fields
+      if (userRole === 'architect') {
+        Object.assign(updates, {
+          experience: values.experience || profileData?.experience || null,
+          skills: values.skills || profileData?.skills || null,
+          education: values.education || profileData?.education || null,
+          social_links: values.location || profileData?.social_links || null,
+          contact_email: values.business_email || profileData?.contact_email || null
+        });
+      } else if (userRole === 'homeowner') {
+        Object.assign(updates, {
+          preferences: values.preferences || profileData?.preferences || null,
+          project_type: values.project_type || profileData?.project_type || null,
+          budget: values.budget || profileData?.budget || null,
+          location: values.location || profileData?.location || null,
+        });
+      }
 
       console.log("Sending profile update:", updates);
 

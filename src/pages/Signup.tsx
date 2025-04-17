@@ -18,13 +18,14 @@ import { Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isArchitect, setIsArchitect] = useState(false);
+  const [userRole, setUserRole] = useState("homeowner");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Signup = () => {
         options: {
           data: {
             full_name: fullName,
-            is_architect: isArchitect,
+            role: userRole,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`
         }
@@ -132,15 +133,22 @@ const Signup = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="architect"
-                      checked={isArchitect}
-                      onCheckedChange={(checked) => setIsArchitect(checked as boolean)}
-                    />
-                    <Label htmlFor="architect" className="text-sm font-normal">
-                      I am an architect and want to showcase my work
-                    </Label>
+                  <div className="grid gap-2">
+                    <Label>I am a:</Label>
+                    <RadioGroup 
+                      value={userRole} 
+                      onValueChange={setUserRole}
+                      className="flex flex-col space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="homeowner" id="homeowner" />
+                        <Label htmlFor="homeowner" className="font-normal">Homeowner looking for designs</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="architect" id="architect" />
+                        <Label htmlFor="architect" className="font-normal">Architect showcasing my work</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? "Creating Account..." : "Create Account"}

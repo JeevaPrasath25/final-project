@@ -12,10 +12,39 @@ import { User, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export const UserMenu = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data && data.user) {
+        // Try to get role from metadata first
+        const role = data.user.user_metadata?.role;
+        if (role) {
+          setUserRole(role);
+          return;
+        }
+        
+        // If not in metadata, check the database
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', data.user.id)
+          .maybeSingle();
+          
+        if (userData) {
+          setUserRole(userData.role);
+        }
+      }
+    };
+    
+    fetchUserRole();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -26,6 +55,10 @@ export const UserMenu = () => {
     navigate("/");
   };
 
+  const profileLink = userRole === 'architect' 
+    ? '/architect-profile' 
+    : '/homeowner-dashboard';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,7 +68,7 @@ export const UserMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-white">
         <DropdownMenuItem asChild>
-          <Link to="/architect-profile" className="cursor-pointer">Profile</Link>
+          <Link to={profileLink} className="cursor-pointer">Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">

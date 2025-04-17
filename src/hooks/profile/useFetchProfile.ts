@@ -25,6 +25,10 @@ export const useFetchProfile = () => {
         });
       }
       
+      // Get user metadata to determine role
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userRole = authUser?.user_metadata?.role || 'homeowner';
+      
       // Query for existing profile by user ID
       const { data, error } = await supabase
         .from("users")
@@ -37,12 +41,12 @@ export const useFetchProfile = () => {
       }
 
       if (!data) {
-        // Create new profile if doesn't exist
+        // Create new profile if doesn't exist, with appropriate fields based on role
         const newProfile = {
           id: user.id,
-          username: user.email?.split('@')[0] || 'Architect',
+          username: authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'User',
           email: user.email,
-          role: 'architect',
+          role: userRole,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
