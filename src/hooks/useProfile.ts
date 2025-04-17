@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,15 @@ export const useProfile = () => {
     try {
       setIsLoading(true);
       if (!user) return;
+      
+      // Check if profiles bucket exists and create it if not
+      const { data: buckets } = await supabase.storage.listBuckets();
+      if (!buckets?.find(bucket => bucket.name === 'profiles')) {
+        await supabase.storage.createBucket('profiles', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+        });
+      }
       
       const { data, error } = await supabase
         .from("users")
@@ -89,9 +99,19 @@ export const useProfile = () => {
         });
       }
 
+      // Add public policy to profiles bucket if needed
+      try {
+        await supabase.storage.from('profiles').getPublicUrl(filePath);
+      } catch (error) {
+        // If error occurs, policies might be missing, let's add them
+        await supabase.rpc('create_storage_policy', { bucket_name: 'profiles' });
+      }
+
       const { error: uploadError } = await supabase.storage
         .from('profiles')
-        .upload(filePath, profileImage);
+        .upload(filePath, profileImage, {
+          upsert: true
+        });
 
       if (uploadError) throw uploadError;
 
@@ -140,20 +160,23 @@ export const useProfile = () => {
         contact_email: values.business_email || profileData?.contact_email
       };
 
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('users')
-        .upsert(updates, {
-          onConflict: 'id'
-        })
-        .select();
+        .update(updates)
+        .eq('id', user.id);
 
       if (error) throw error;
 
-      let updatedProfile = updates; // Default to updates object
-      if (data && data[0]) {
-        updatedProfile = data[0];
-      }
-      setProfileData(updatedProfile);
+      // Fetch updated profile data
+      const { data: updatedProfileData, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (fetchError) throw fetchError;
+
+      setProfileData(updatedProfileData);
       
       toast({
         title: "Profile updated",

@@ -103,9 +103,17 @@ interface Design {
   image_url: string;
   user_id: string;
   created_at: string;
+  users?: {
+    username: string;
+    social_links: string | null;
+  }
 }
 
-interface ProjectWithUser extends Design {
+interface ProjectWithUser {
+  id: number | string;
+  title: string;
+  description: string;
+  imageUrl: string;
   architect: string;
   architectId: string;
   location: string;
@@ -115,8 +123,6 @@ interface ProjectWithUser extends Design {
   likes: number;
   date: string;
   featured?: boolean;
-  description: string;
-  imageUrl: string;
 }
 
 const Explore = () => {
@@ -135,7 +141,17 @@ const Explore = () => {
       try {
         const { data: designsData, error } = await supabase
           .from('designs')
-          .select(`*, users(username, social_links)`);
+          .select(`
+            id,
+            title,
+            image_url,
+            user_id,
+            created_at,
+            users (
+              username,
+              social_links
+            )
+          `);
 
         if (error) {
           console.error("Error fetching designs:", error);
@@ -145,12 +161,12 @@ const Explore = () => {
         if (!designsData) return;
 
         // Transform designs to project format
-        const userProjects = designsData.map((design: any) => ({
+        const userProjects = designsData.map((design: Design) => ({
           id: design.id,
           title: design.title,
-          description: design.description || "A beautiful architectural design",
+          description: "Design uploaded by an architect",
           imageUrl: design.image_url,
-          architect: design.users?.username || "Unknown architect",
+          architect: design.users?.username || "Architect",
           architectId: design.user_id,
           location: design.users?.social_links || "Unknown location",
           style: "modern", // Default style
