@@ -160,12 +160,17 @@ export const useProfile = () => {
         }
       });
 
+      console.log("Sending profile update:", JSON.stringify(updates));
+
       const { error } = await supabase
         .from('users')
         .update(updates)
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update error:", error);
+        throw error;
+      }
 
       // Fetch updated profile data
       const { data: updatedProfileData, error: fetchError } = await supabase
@@ -174,7 +179,10 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single();
         
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error("Fetch error after update:", fetchError);
+        throw fetchError;
+      }
 
       setProfileData(updatedProfileData);
       
