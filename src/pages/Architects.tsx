@@ -2,12 +2,15 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ArchitectCard from "@/components/architects/ArchitectCard";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 // Interface that matches the database structure
 interface ArchitectUser {
@@ -21,24 +24,10 @@ interface ArchitectUser {
   role: string;
 }
 
-// Interface expected by the ArchitectCard component
-export interface ArchitectDisplayData {
-  id: string;
-  name: string;
-  profileImage: string;
-  specialty: string;
-  bio: string;
-  location: string;
-  rating: number;
-  projects: number;
-  available: boolean;
-  tags: string[];
-}
-
 const Architects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [architects, setArchitects] = useState<ArchitectUser[]>([]);
-  const [displayArchitects, setDisplayArchitects] = useState<ArchitectDisplayData[]>([]);
+  const [filteredArchitects, setFilteredArchitects] = useState<ArchitectUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch architects from database
@@ -60,22 +49,7 @@ const Architects = () => {
         
         // Store original data
         setArchitects(data);
-        
-        // Transform data to match ArchitectCard props
-        const architectData = data.map((user: ArchitectUser) => ({
-          id: user.id,
-          name: user.username || "Architect",
-          profileImage: user.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg", // default avatar
-          specialty: user.skills || "Architecture Design",
-          bio: user.bio || "Professional architect with design expertise.",
-          location: user.social_links || "Location not specified",
-          rating: 4.5, // Default rating
-          projects: 0, // Default projects count
-          available: true, // Default availability
-          tags: user.experience ? [user.experience] : ["Architecture"]
-        }));
-
-        setDisplayArchitects(architectData);
+        setFilteredArchitects(data);
       } catch (error) {
         console.error("Failed to fetch architects:", error);
       } finally {
@@ -88,32 +62,24 @@ const Architects = () => {
 
   const handleSearch = () => {
     if (!searchQuery) {
-      const defaultDisplay = architects.map(architect => ({
-        id: architect.id,
-        name: architect.username || "Architect",
-        profileImage: architect.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
-        specialty: architect.skills || "Architecture Design",
-        bio: architect.bio || "Professional architect with design expertise.",
-        location: architect.social_links || "Location not specified",
-        rating: 4.5,
-        projects: 0,
-        available: true,
-        tags: architect.experience ? [architect.experience] : ["Architecture"]
-      }));
-      setDisplayArchitects(defaultDisplay);
+      setFilteredArchitects(architects);
       return;
     }
 
     const query = searchQuery.toLowerCase();
-    const results = displayArchitects.filter(
-      architect =>
-        architect.name.toLowerCase().includes(query) ||
-        architect.specialty.toLowerCase().includes(query) ||
-        architect.location.toLowerCase().includes(query) ||
-        architect.tags.some(tag => tag.toLowerCase().includes(query))
+    const results = architects.filter(architect => 
+      architect.username?.toLowerCase().includes(query) ||
+      architect.skills?.toLowerCase().includes(query) ||
+      architect.social_links?.toLowerCase().includes(query) ||
+      architect.experience?.toLowerCase().includes(query) ||
+      architect.bio?.toLowerCase().includes(query)
     );
 
-    setDisplayArchitects(results);
+    setFilteredArchitects(results);
+  };
+
+  const getInitial = (name: string | null) => {
+    return name ? name.charAt(0).toUpperCase() : 'A';
   };
 
   return (
@@ -153,10 +119,49 @@ const Architects = () => {
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
-          ) : displayArchitects.length > 0 ? (
-            <div className="space-y-8">
-              {displayArchitects.map((architect) => (
-                <ArchitectCard key={architect.id} architect={architect} />
+          ) : filteredArchitects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredArchitects.map((architect) => (
+                <Card key={architect.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={architect.avatar_url || undefined} alt={architect.username} />
+                        <AvatarFallback className="bg-primary text-white text-lg">
+                          {getInitial(architect.username)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-lg font-semibold">{architect.username}</h3>
+                        {architect.skills && (
+                          <p className="text-sm text-primary">{architect.skills}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {architect.bio && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{architect.bio}</p>
+                    )}
+                    
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {architect.experience && (
+                        <Badge variant="outline">{architect.experience}</Badge>
+                      )}
+                      {architect.social_links && (
+                        <Badge variant="outline">{architect.social_links}</Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <Button asChild variant="default" size="sm">
+                        <Link to={`/architect/${architect.id}`}>View Profile</Link>
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Contact
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           ) : (
@@ -166,20 +171,8 @@ const Architects = () => {
                 Try searching with different keywords
               </p>
               <Button onClick={() => {
-                const defaultDisplay = architects.map(architect => ({
-                  id: architect.id,
-                  name: architect.username || "Architect",
-                  profileImage: architect.avatar_url || "https://randomuser.me/api/portraits/lego/1.jpg",
-                  specialty: architect.skills || "Architecture Design",
-                  bio: architect.bio || "Professional architect with design expertise.",
-                  location: architect.social_links || "Location not specified",
-                  rating: 4.5,
-                  projects: 0,
-                  available: true,
-                  tags: architect.experience ? [architect.experience] : ["Architecture"]
-                }));
                 setSearchQuery("");
-                setDisplayArchitects(defaultDisplay);
+                setFilteredArchitects(architects);
               }}>
                 Clear Search
               </Button>

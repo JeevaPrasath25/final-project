@@ -27,8 +27,9 @@ const HomeownerProfileForm = ({
   onFileChange,
 }: HomeownerProfileFormProps) => {
   const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [selectedProjectType, setSelectedProjectType] = useState(profileData?.project_type || "");
   
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     defaultValues: {
       username: profileData?.username || "",
       bio: profileData?.bio || "",
@@ -36,6 +37,12 @@ const HomeownerProfileForm = ({
       project_type: profileData?.project_type || "",
     }
   });
+
+  // Set project type in form when selected from dropdown
+  const handleProjectTypeChange = (value: string) => {
+    setSelectedProjectType(value);
+    setValue("project_type", value);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -135,13 +142,8 @@ const HomeownerProfileForm = ({
         <div>
           <Label htmlFor="project_type">Project Type</Label>
           <Select 
-            onValueChange={(value) => {
-              const projectTypeInput = document.getElementById('project_type') as HTMLInputElement;
-              if (projectTypeInput) {
-                projectTypeInput.value = value;
-              }
-            }}
-            defaultValue={profileData?.project_type || ""}
+            value={selectedProjectType}
+            onValueChange={handleProjectTypeChange}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select project type" />
@@ -156,8 +158,8 @@ const HomeownerProfileForm = ({
           </Select>
           <input
             type="hidden"
-            {...register("project_type")}
             id="project_type"
+            {...register("project_type")}
           />
         </div>
       </div>
