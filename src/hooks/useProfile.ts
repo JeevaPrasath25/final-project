@@ -31,7 +31,7 @@ export const useProfile = () => {
   // Combine the loading states
   const combinedIsLoading = isLoading || isUpdating;
 
-  // Return the same interface as before to maintain compatibility
+  // Return all necessary functions and state
   return {
     isLoading: combinedIsLoading,
     profileData,
@@ -40,6 +40,7 @@ export const useProfile = () => {
     setProfileImage,
     uploadingProfileImage,
     updateProfile,
-    fetchProfileData
+    fetchProfileData, // Make sure to expose this function
+    setProfileData
   };
 };

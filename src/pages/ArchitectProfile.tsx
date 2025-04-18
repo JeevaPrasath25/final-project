@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +26,10 @@ const ArchitectProfilePage = () => {
     isLoading,
     profileData,
     profileImageUrl,
-    uploadingProfileImage,
     setProfileImage,
-    updateProfile
+    uploadingProfileImage,
+    updateProfile,
+    fetchProfileData // We'll use this to refresh the data
   } = useProfile();
   
   const {
@@ -54,9 +56,24 @@ const ArchitectProfilePage = () => {
   }, [user, authLoading, navigate, toast]);
   
   const handleProfileFormSubmit = async (values: any) => {
-    const success = await updateProfile(values);
-    if (success) {
-      setIsEditing(false);
+    try {
+      const success = await updateProfile(values);
+      if (success) {
+        // Refresh profile data after successful update
+        await fetchProfileData();
+        setIsEditing(false);
+        toast({
+          title: "Profile updated",
+          description: "Your changes have been saved successfully.",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "There was an error updating your profile. Please try again.",
+      });
     }
   };
   
