@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRightIcon, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArchitectDisplayData } from "@/pages/Architects";
+import { ArchitectDisplayData } from "@/types/architect";
 
 const FeaturedArchitects = () => {
   const [featuredArchitects, setFeaturedArchitects] = useState<ArchitectDisplayData[]>([]);

@@ -1,11 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Star, Bookmark, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArchitectDisplayData } from "@/pages/Architects";
+import { ArchitectDisplayData } from "@/types/architect";
 
 const ArchitectCard = ({ architect }: { architect: ArchitectDisplayData }) => {
   // Get first letter of name for avatar fallback
