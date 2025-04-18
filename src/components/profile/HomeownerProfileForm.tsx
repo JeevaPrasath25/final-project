@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 
 interface HomeownerProfileFormProps {
   profileData: any;
@@ -41,7 +32,6 @@ const HomeownerProfileForm = ({
       username: profileData?.username || "",
       bio: profileData?.bio || "",
       contact_number: profileData?.contact_details || "",
-      preferences: profileData?.preferences || "",
       project_type: profileData?.project_type || "",
     }
   });
@@ -159,16 +149,6 @@ const HomeownerProfileForm = ({
             type="hidden"
             {...register("project_type")}
             id="project_type"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="preferences">Design Preferences</Label>
-          <Textarea
-            id="preferences"
-            {...register("preferences")}
-            placeholder="Describe your design style and preferences"
-            className="h-24"
           />
         </div>
       </div>

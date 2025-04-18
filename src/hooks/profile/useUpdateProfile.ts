@@ -42,23 +42,9 @@ export const useUpdateProfile = (
         bio: values.bio || profileData?.bio || null,
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
+        project_type: values.project_type || profileData?.project_type || null,
+        // Removed preferences from updates
       };
-
-      // Add role-specific fields
-      if (userRole === 'architect') {
-        Object.assign(updates, {
-          experience: values.experience || profileData?.experience || null,
-          skills: values.skills || profileData?.skills || null,
-          education: values.education || profileData?.education || null,
-          social_links: values.social_links || profileData?.social_links || null,
-          contact_email: values.business_email || profileData?.contact_email || null
-        });
-      } else if (userRole === 'homeowner') {
-        Object.assign(updates, {
-          preferences: values.preferences || profileData?.preferences || null,
-          project_type: values.project_type || profileData?.project_type || null,
-        });
-      }
 
       console.log("Sending profile update:", updates);
 
