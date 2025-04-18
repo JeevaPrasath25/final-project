@@ -1,5 +1,5 @@
 
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DesignCard from "./DesignCard";
 import { Design } from "@/hooks/useDesigns";
@@ -9,9 +9,16 @@ interface DesignGridProps {
   onLike: (id: string, liked: boolean) => void;
   onSave: (id: string, saved: boolean) => void;
   onUploadClick: () => void;
+  onDeleteDesign?: (id: string) => void;
 }
 
-const DesignGrid = ({ designs, onLike, onSave, onUploadClick }: DesignGridProps) => {
+const DesignGrid = ({ 
+  designs, 
+  onLike, 
+  onSave, 
+  onUploadClick, 
+  onDeleteDesign 
+}: DesignGridProps) => {
   if (designs.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -35,6 +42,7 @@ const DesignGrid = ({ designs, onLike, onSave, onUploadClick }: DesignGridProps)
           design={design}
           onLike={onLike}
           onSave={onSave}
+          onDelete={onDeleteDesign}
         />
       ))}
     </div>

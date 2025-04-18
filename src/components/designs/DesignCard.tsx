@@ -1,16 +1,18 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Bookmark } from "lucide-react";
+import { Heart, Bookmark, Trash2 } from "lucide-react";
 import { Design } from "@/hooks/useDesigns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface DesignCardProps {
   design: Design;
   onLike: (id: string, liked: boolean) => void;
   onSave: (id: string, saved: boolean) => void;
+  onDelete?: (id: string) => void;
 }
 
-const DesignCard = ({ design, onLike, onSave }: DesignCardProps) => {
+const DesignCard = ({ design, onLike, onSave, onDelete }: DesignCardProps) => {
   return (
     <Card key={design.id} className="overflow-hidden">
       <div className="relative pb-[66%] bg-gray-100">
@@ -19,6 +21,33 @@ const DesignCard = ({ design, onLike, onSave }: DesignCardProps) => {
           alt={design.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
+        {onDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                size="icon" 
+                variant="destructive" 
+                className="absolute top-2 right-2 opacity-80 hover:opacity-100"
+              >
+                <Trash2 className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Design?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this design? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onDelete(design.id)}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
       <CardContent className="p-4">
         <div className="flex justify-between items-start">

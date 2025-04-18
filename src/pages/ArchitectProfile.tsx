@@ -39,6 +39,7 @@ const ArchitectProfilePage = () => {
     uploadDesignImage,
     toggleLikeDesign,
     toggleSaveDesign,
+    deleteDesign
   } = useDesigns();
 
   useEffect(() => {
@@ -180,6 +181,7 @@ const ArchitectProfilePage = () => {
                 onLike={toggleLikeDesign}
                 onSave={toggleSaveDesign}
                 onUploadClick={handleDesignUploadClick}
+                onDeleteDesign={deleteDesign}
               />
             </TabsContent>
             

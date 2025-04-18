@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Define the shape of our design data
 export interface Design {
   id: string;
   title: string;
@@ -16,7 +15,6 @@ export interface Design {
   design_saves: { count: number };
 }
 
-// Create a custom type for the Supabase client to handle tables not in types definition
 type GenericSchema = {
   Tables: Record<string, unknown>;
   Views: Record<string, unknown>;
@@ -35,7 +33,6 @@ export const useDesigns = () => {
     try {
       if (!user) return;
 
-      // Use a generic type assertion for tables not in the Supabase types
       const { data: designsData, error } = await supabase
         .from("designs")
         .select("*")
@@ -44,10 +41,8 @@ export const useDesigns = () => {
 
       if (error) throw error;
 
-      // Process each design to check likes and saves
       const designsWithUserActions = await Promise.all(
         (designsData || []).map(async (design) => {
-          // Check if user has liked the design
           const { data: likeData, error: likeError } = await supabase
             .from("design_likes")
             .select("*")
@@ -55,7 +50,6 @@ export const useDesigns = () => {
             .eq("user_id", user.id)
             .maybeSingle();
 
-          // Check if user has saved the design
           const { data: saveData, error: saveError } = await supabase
             .from("design_saves")
             .select("*")
@@ -63,13 +57,11 @@ export const useDesigns = () => {
             .eq("user_id", user.id)
             .maybeSingle();
 
-          // Count likes for the design
           const { count: likesCount, error: likesCountError } = await supabase
             .from("design_likes")
             .select("*", { count: "exact", head: true })
             .eq("design_id", design.id);
 
-          // Count saves for the design
           const { count: savesCount, error: savesCountError } = await supabase
             .from("design_saves")
             .select("*", { count: "exact", head: true })
@@ -104,7 +96,6 @@ export const useDesigns = () => {
       const fileExt = designImage.name.split('.').pop();
       const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      // Upload to the designs bucket
       const { error: uploadError, data } = await supabase.storage
         .from('designs')
         .upload(fileName, designImage);
@@ -148,7 +139,6 @@ export const useDesigns = () => {
         description: "Your design has been uploaded successfully",
       });
       
-      // Refresh designs
       fetchDesigns();
       return true;
     } catch (error: any) {
@@ -176,7 +166,6 @@ export const useDesigns = () => {
       }
 
       if (currentlyLiked) {
-        // Unlike the design
         const { error } = await supabase
           .from("design_likes")
           .delete()
@@ -185,7 +174,6 @@ export const useDesigns = () => {
 
         if (error) throw error;
       } else {
-        // Like the design
         const { error } = await supabase
           .from("design_likes")
           .insert({
@@ -196,7 +184,6 @@ export const useDesigns = () => {
         if (error) throw error;
       }
 
-      // Update designs state
       setDesigns(designs.map(design => {
         if (design.id === designId) {
           return {
@@ -233,7 +220,6 @@ export const useDesigns = () => {
       }
 
       if (currentlySaved) {
-        // Unsave the design
         const { error } = await supabase
           .from("design_saves")
           .delete()
@@ -242,7 +228,6 @@ export const useDesigns = () => {
 
         if (error) throw error;
       } else {
-        // Save the design
         const { error } = await supabase
           .from("design_saves")
           .insert({
@@ -253,7 +238,6 @@ export const useDesigns = () => {
         if (error) throw error;
       }
 
-      // Update designs state
       setDesigns(designs.map(design => {
         if (design.id === designId) {
           return {
@@ -278,6 +262,43 @@ export const useDesigns = () => {
     }
   };
 
+  const deleteDesign = async (designId: string) => {
+    try {
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Authentication required",
+          description: "You need to be logged in to delete designs",
+        });
+        return false;
+      }
+
+      const { error } = await supabase
+        .from("designs")
+        .delete()
+        .eq('id', designId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Design Deleted",
+        description: "Your design has been successfully deleted",
+      });
+
+      await fetchDesigns();
+      return true;
+    } catch (error: any) {
+      console.error("Error deleting design:", error);
+      toast({
+        variant: "destructive",
+        title: "Error deleting design",
+        description: error.message,
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchDesigns();
@@ -294,5 +315,6 @@ export const useDesigns = () => {
     toggleLikeDesign,
     toggleSaveDesign,
     fetchDesigns,
+    deleteDesign,
   };
 };
