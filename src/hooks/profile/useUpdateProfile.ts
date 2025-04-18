@@ -43,7 +43,6 @@ export const useUpdateProfile = (
         avatar_url: avatar_url || null,
         updated_at: new Date().toISOString(),
         project_type: values.project_type || profileData?.project_type || null,
-        // Removed preferences from updates
       };
 
       console.log("Sending profile update:", updates);

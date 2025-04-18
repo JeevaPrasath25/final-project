@@ -293,6 +293,7 @@ export type Database = {
           email: string
           experience: string | null
           id: string
+          project_type: string | null
           rating: number | null
           role: string
           skills: string | null
@@ -310,6 +311,7 @@ export type Database = {
           email: string
           experience?: string | null
           id: string
+          project_type?: string | null
           rating?: number | null
           role: string
           skills?: string | null
@@ -327,6 +329,7 @@ export type Database = {
           email?: string
           experience?: string | null
           id?: string
+          project_type?: string | null
           rating?: number | null
           role?: string
           skills?: string | null

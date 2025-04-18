@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +134,15 @@ const HomeownerProfileForm = ({
 
         <div>
           <Label htmlFor="project_type">Project Type</Label>
-          <Select defaultValue={profileData?.project_type || ""}>
+          <Select 
+            onValueChange={(value) => {
+              const projectTypeInput = document.getElementById('project_type') as HTMLInputElement;
+              if (projectTypeInput) {
+                projectTypeInput.value = value;
+              }
+            }}
+            defaultValue={profileData?.project_type || ""}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select project type" />
             </SelectTrigger>
