@@ -7,96 +7,6 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Sample projects data as fallback
-const sampleProjects = [
-  {
-    id: 1,
-    title: "Minimalist Lakeside Villa",
-    description: "A serene retreat with panoramic lake views and clean lines, perfect for those seeking tranquility in nature.",
-    imageUrl: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "Elena Rodriguez",
-    architectId: "elena-rodriguez",
-    location: "Lake Como, Italy",
-    style: "minimalist",
-    rooms: 4,
-    size: 3200,
-    likes: 245,
-    date: "2024-03-15",
-    featured: true
-  },
-  {
-    id: 2,
-    title: "Urban Garden House",
-    description: "Sustainable living with integrated vertical gardens in the heart of a bustling metropolis.",
-    imageUrl: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "James Wilson",
-    architectId: "james-wilson",
-    location: "Singapore",
-    style: "contemporary",
-    rooms: 3,
-    size: 1800,
-    likes: 189,
-    date: "2024-02-28"
-  },
-  {
-    id: 3,
-    title: "Coastal Modern Retreat",
-    description: "Luxurious beachfront property with sustainable materials and panoramic ocean views.",
-    imageUrl: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "Sophia Chang",
-    architectId: "sophia-chang",
-    location: "Malibu, California",
-    style: "modern",
-    rooms: 5,
-    size: 4200,
-    likes: 310,
-    date: "2024-03-05"
-  },
-  {
-    id: 4,
-    title: "Nordic Forest Cabin",
-    description: "Minimalist cabin nestled among pine trees, featuring natural materials and large windows.",
-    imageUrl: "https://images.unsplash.com/photo-1575517111839-3a3843ee7f5d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "Marcus Jensen",
-    architectId: "marcus-jensen",
-    location: "Oslo, Norway",
-    style: "scandinavian",
-    rooms: 2,
-    size: 1200,
-    likes: 175,
-    date: "2024-01-20"
-  },
-  {
-    id: 5,
-    title: "Mediterranean Courtyard Villa",
-    description: "Traditional Mediterranean villa with a central courtyard and terracotta roof tiles.",
-    imageUrl: "https://images.unsplash.com/photo-1615529328331-f8917597711f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "Isabella Rossi",
-    architectId: "isabella-rossi",
-    location: "Santorini, Greece",
-    style: "mediterranean",
-    rooms: 4,
-    size: 2800,
-    likes: 232,
-    date: "2024-02-10",
-    featured: true
-  },
-  {
-    id: 6,
-    title: "Industrial Loft Conversion",
-    description: "Former warehouse transformed into a spacious loft with original industrial elements.",
-    imageUrl: "https://images.unsplash.com/photo-1523755231516-e43fd2e8dca5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    architect: "Daniel Smith",
-    architectId: "daniel-smith",
-    location: "Brooklyn, NY",
-    style: "industrial",
-    rooms: 2,
-    size: 2100,
-    likes: 168,
-    date: "2024-03-22"
-  }
-];
-
 interface Design {
   id: string;
   title: string;
@@ -175,7 +85,7 @@ const Explore = () => {
         }
 
         // Transform designs to project format
-        const userProjects: ProjectWithUser[] = designsData.map((design: any) => ({
+        const userProjects: ProjectWithUser[] = designsData.map((design: Design) => ({
           id: design.id,
           title: design.title || "Untitled Design",
           description: "Design uploaded by an architect",
