@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Logo & About */}
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="text-2xl font-bold font-playfair">
-              Design<span className="text-design-primary">Next</span>
+              Design<span className="text-design-primary">Nest</span>
             </Link>
             <p className="mt-4 text-muted-foreground text-sm">
               Connect with top architects and discover your dream home design.
@@ -106,7 +106,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-sm text-muted-foreground text-center">
-          <p>© {new Date().getFullYear()} DesignNext. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DesignNest. All rights reserved.</p>
         </div>
       </div>
     </footer>
