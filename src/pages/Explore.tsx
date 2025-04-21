@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -8,7 +7,6 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Sample projects data as fallback
 const sampleProjects = [
   {
     id: 1,
@@ -139,13 +137,10 @@ const Explore = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user designs from Supabase
     const fetchDesigns = async () => {
       try {
         setIsLoading(true);
-        
-        console.log("Fetching designs...");
-        
+
         const { data: designsData, error } = await supabase
           .from('designs')
           .select(`
@@ -162,43 +157,36 @@ const Explore = () => {
           `);
 
         if (error) {
-          console.error("Error fetching designs:", error);
           setAllProjects(sampleProjects);
           return;
         }
-
-        console.log("Fetched designs:", designsData);
 
         if (!designsData || designsData.length === 0) {
-          console.log("No designs found, using sample projects");
           setAllProjects(sampleProjects);
           return;
         }
 
-        // Transform designs to project format
         const userProjects: ProjectWithUser[] = designsData.map((design: any) => ({
           id: design.id,
           title: design.title || "Untitled Design",
-          description: "Design uploaded by an architect",
+          description: "Design uploaded by architect",
           imageUrl: design.image_url,
           architect: design.users?.username || "Architect",
-          architectId: design.user_id,
+          architectId: design.users?.username
+            ? String(design.users.username)
+            : design.user_id,
           location: design.users?.social_links || "Unknown location",
-          style: "modern", // Default style
-          rooms: 3, // Default
-          size: 2000, // Default
-          likes: Math.floor(Math.random() * 100), // Random likes for demo
+          style: "modern",
+          rooms: 3,
+          size: 2000,
+          likes: Math.floor(Math.random() * 100),
           date: design.created_at,
-          featured: Math.random() > 0.7 // Random featured status for some designs
+          featured: Math.random() > 0.7
         }));
 
-        console.log("Transformed user projects:", userProjects);
-
-        // Combine sample projects with user designs
         const combinedProjects = [...userProjects, ...sampleProjects];
         setAllProjects(combinedProjects);
       } catch (err) {
-        console.error("Error in fetchDesigns:", err);
         setAllProjects(sampleProjects);
       } finally {
         setIsLoading(false);
@@ -209,20 +197,17 @@ const Explore = () => {
   }, []);
 
   useEffect(() => {
-    // Apply filters
     if (allProjects.length === 0) {
       setFilteredProjects([]);
       return;
     }
-    
+
     let result = [...allProjects];
 
-    // Filter by style
     if (filters.style !== "all") {
       result = result.filter(project => project.style === filters.style);
     }
 
-    // Filter by rooms
     if (filters.rooms !== "all") {
       if (filters.rooms === "5+") {
         result = result.filter(project => project.rooms >= 5);
@@ -231,12 +216,10 @@ const Explore = () => {
       }
     }
 
-    // Filter by size
     result = result.filter(
       project => project.size >= filters.size[0] && project.size <= filters.size[1]
     );
 
-    // Apply sorting
     switch (filters.sortBy) {
       case "newest":
         result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -245,10 +228,10 @@ const Explore = () => {
         result.sort((a, b) => b.likes - a.likes);
         break;
       case "budget_low":
-        result.sort((a, b) => a.size - b.size); // Using size as a proxy for budget
+        result.sort((a, b) => a.size - b.size);
         break;
       case "budget_high":
-        result.sort((a, b) => b.size - a.size); // Using size as a proxy for budget
+        result.sort((a, b) => b.size - a.size);
         break;
       default:
         break;
@@ -287,7 +270,6 @@ const Explore = () => {
                   )}
                 </p>
               </div>
-
               {isLoading ? (
                 <div className="flex justify-center items-center py-20">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
