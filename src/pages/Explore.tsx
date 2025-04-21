@@ -136,6 +136,9 @@ const Explore = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 6;
+
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
@@ -240,6 +243,12 @@ const Explore = () => {
     setFilteredProjects(result);
   }, [filters, allProjects]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, allProjects]);
+
+  const pagedProjects = filteredProjects.slice(0, currentPage * projectsPerPage);
+
   const handleFilterChange = (newFilters: Filters) => {
     setFilters(newFilters);
   };
@@ -274,8 +283,20 @@ const Explore = () => {
                 <div className="flex justify-center items-center py-20">
                   <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 </div>
-              ) : filteredProjects.length > 0 ? (
-                <ProjectGrid projects={filteredProjects} />
+              ) : pagedProjects.length > 0 ? (
+                <>
+                  <ProjectGrid projects={pagedProjects} />
+                  {pagedProjects.length < filteredProjects.length && (
+                    <div className="flex justify-center mt-8">
+                      <button
+                        onClick={() => setCurrentPage((prev) => prev + 1)}
+                        className="px-6 py-2 bg-design-primary text-white rounded-lg font-medium shadow-md hover:bg-design-primary/90 transition-colors"
+                      >
+                        Load More
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="text-center py-12 bg-white rounded-lg border">
                   <p className="text-xl font-medium mb-2">No projects found</p>
