@@ -57,7 +57,7 @@ const DesignCard = ({ design, onLike, onSave, onDelete }: DesignCardProps) => {
               size="icon"
               variant="ghost"
               className={design.liked_by_user ? "text-red-500" : "text-gray-500"}
-              onClick={() => onLike(design.id, design.liked_by_user)}
+              onClick={() => onLike(design.id, !!design.liked_by_user)}
             >
               <Heart className="h-5 w-5" fill={design.liked_by_user ? "currentColor" : "none"} />
             </Button>
@@ -65,7 +65,7 @@ const DesignCard = ({ design, onLike, onSave, onDelete }: DesignCardProps) => {
               size="icon"
               variant="ghost"
               className={design.saved_by_user ? "text-yellow-500" : "text-gray-500"}
-              onClick={() => onSave(design.id, design.saved_by_user)}
+              onClick={() => onSave(design.id, !!design.saved_by_user)}
             >
               <Bookmark className="h-5 w-5" fill={design.saved_by_user ? "currentColor" : "none"} />
             </Button>

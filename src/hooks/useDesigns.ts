@@ -13,6 +13,10 @@ export interface Design {
   size?: number;
   date?: string;
   featured?: boolean;
+  liked_by_user?: boolean;
+  saved_by_user?: boolean;
+  design_likes?: { count: number };
+  design_saves?: { count: number };
 }
 
 export function useDesigns() {
@@ -33,7 +37,7 @@ export function useDesigns() {
           .from("designs")
           .select(`
             id, image_url, title, style, rooms, size, created_at, featured, 
-            architect:architect_id ( id, username )
+            architect:user_id ( id, username )
           `)
           .order("created_at", { ascending: false });
 
@@ -51,6 +55,10 @@ export function useDesigns() {
               featured: d.featured,
               architect_name: d.architect?.username || "Architect",
               architect_id: d.architect?.id || "",
+              liked_by_user: false,
+              saved_by_user: false,
+              design_likes: { count: 0 },
+              design_saves: { count: 0 }
             }))
           );
         }
@@ -65,7 +73,6 @@ export function useDesigns() {
 
     // Supabase real-time subscription to 'designs' table
     try {
-      // @ts-expect-error: Supabase V2 types
       subscription = supabase
         .channel('public:designs')
         .on(

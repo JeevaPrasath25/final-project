@@ -1,5 +1,5 @@
 
-import { useDesigns } from "@/hooks/useDesigns";
+import { useDesigns, Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ArrowRight, Loader2 } from "lucide-react";
