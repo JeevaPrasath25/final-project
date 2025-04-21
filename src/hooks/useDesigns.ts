@@ -1,320 +1,90 @@
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 export interface Design {
   id: string;
-  title: string;
   image_url: string;
-  user_id: string;
-  created_at: string;
-  liked_by_user: boolean;
-  saved_by_user: boolean;
-  design_likes: { count: number };
-  design_saves: { count: number };
+  title: string;
+  architect_name: string;
+  architect_id: string;
+  style?: string;
+  rooms?: number;
+  size?: number;
+  date?: string;
+  featured?: boolean;
 }
 
-type GenericSchema = {
-  Tables: Record<string, unknown>;
-  Views: Record<string, unknown>;
-  Functions: Record<string, unknown>;
-  Enums: Record<string, unknown>;
-};
-
-export const useDesigns = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+export function useDesigns() {
   const [designs, setDesigns] = useState<Design[]>([]);
-  const [designImage, setDesignImage] = useState<File | null>(null);
-  const [uploadingDesign, setUploadingDesign] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchDesigns = async () => {
-    try {
-      if (!user) return;
-
-      const { data: designsData, error } = await supabase
-        .from("designs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      const designsWithUserActions = await Promise.all(
-        (designsData || []).map(async (design) => {
-          const { data: likeData, error: likeError } = await supabase
-            .from("design_likes")
-            .select("*")
-            .eq("design_id", design.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          const { data: saveData, error: saveError } = await supabase
-            .from("design_saves")
-            .select("*")
-            .eq("design_id", design.id)
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          const { count: likesCount, error: likesCountError } = await supabase
-            .from("design_likes")
-            .select("*", { count: "exact", head: true })
-            .eq("design_id", design.id);
-
-          const { count: savesCount, error: savesCountError } = await supabase
-            .from("design_saves")
-            .select("*", { count: "exact", head: true })
-            .eq("design_id", design.id);
-
-          return {
-            ...design,
-            liked_by_user: !!likeData,
-            saved_by_user: !!saveData,
-            design_likes: { count: likesCount || 0 },
-            design_saves: { count: savesCount || 0 }
-          } as Design;
-        })
-      );
-
-      setDesigns(designsWithUserActions);
-    } catch (error: any) {
-      console.error("Error fetching designs:", error);
-      toast({
-        variant: "destructive",
-        title: "Error fetching designs",
-        description: error.message,
-      });
-    }
-  };
-
-  const uploadDesignImage = async () => {
-    if (!designImage || !user) return null;
-
-    setUploadingDesign(true);
-    try {
-      const fileExt = designImage.name.split('.').pop();
-      const fileName = `${user.id}/${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-      const { error: uploadError, data } = await supabase.storage
-        .from('designs')
-        .upload(fileName, designImage);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from('designs').getPublicUrl(fileName);
-      
-      return urlData.publicUrl;
-    } catch (error: any) {
-      console.error("Error uploading design image:", error);
-      toast({
-        variant: "destructive",
-        title: "Error uploading design image",
-        description: error.message,
-      });
-      return null;
-    } finally {
-      setUploadingDesign(false);
-    }
-  };
-
-  const uploadDesign = async (title: string, imageUrl: string) => {
-    try {
-      if (!user) return false;
-      setUploadingDesign(true);
-      
-      const { error, data } = await supabase
-        .from("designs")
-        .insert({
-          user_id: user.id,
-          title,
-          image_url: imageUrl,
-        })
-        .select();
-
-      if (error) throw error;
-
-      toast({
-        title: "Design uploaded",
-        description: "Your design has been uploaded successfully",
-      });
-      
-      fetchDesigns();
-      return true;
-    } catch (error: any) {
-      console.error("Error uploading design:", error);
-      toast({
-        variant: "destructive",
-        title: "Error uploading design",
-        description: error.message,
-      });
-      return false;
-    } finally {
-      setUploadingDesign(false);
-    }
-  };
-
-  const toggleLikeDesign = async (designId: string, currentlyLiked: boolean) => {
-    try {
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Authentication required",
-          description: "You need to be logged in to like designs",
-        });
-        return;
-      }
-
-      if (currentlyLiked) {
-        const { error } = await supabase
-          .from("design_likes")
-          .delete()
-          .eq('design_id', designId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("design_likes")
-          .insert({
-            design_id: designId,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-      }
-
-      setDesigns(designs.map(design => {
-        if (design.id === designId) {
-          return {
-            ...design,
-            liked_by_user: !currentlyLiked,
-            design_likes: {
-              count: currentlyLiked 
-                ? design.design_likes.count - 1 
-                : design.design_likes.count + 1
-            }
-          };
-        }
-        return design;
-      }));
-    } catch (error: any) {
-      console.error("Error updating like:", error);
-      toast({
-        variant: "destructive",
-        title: "Error updating like",
-        description: error.message,
-      });
-    }
-  };
-
-  const toggleSaveDesign = async (designId: string, currentlySaved: boolean) => {
-    try {
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Authentication required",
-          description: "You need to be logged in to save designs",
-        });
-        return;
-      }
-
-      if (currentlySaved) {
-        const { error } = await supabase
-          .from("design_saves")
-          .delete()
-          .eq('design_id', designId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("design_saves")
-          .insert({
-            design_id: designId,
-            user_id: user.id,
-          });
-
-        if (error) throw error;
-      }
-
-      setDesigns(designs.map(design => {
-        if (design.id === designId) {
-          return {
-            ...design,
-            saved_by_user: !currentlySaved,
-            design_saves: {
-              count: currentlySaved 
-                ? design.design_saves.count - 1 
-                : design.design_saves.count + 1
-            }
-          };
-        }
-        return design;
-      }));
-    } catch (error: any) {
-      console.error("Error updating save:", error);
-      toast({
-        variant: "destructive",
-        title: "Error updating save",
-        description: error.message,
-      });
-    }
-  };
-
-  const deleteDesign = async (designId: string) => {
-    try {
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Authentication required",
-          description: "You need to be logged in to delete designs",
-        });
-        return false;
-      }
-
-      const { error } = await supabase
-        .from("designs")
-        .delete()
-        .eq('id', designId)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Design Deleted",
-        description: "Your design has been successfully deleted",
-      });
-
-      await fetchDesigns();
-      return true;
-    } catch (error: any) {
-      console.error("Error deleting design:", error);
-      toast({
-        variant: "destructive",
-        title: "Error deleting design",
-        description: error.message,
-      });
-      return false;
-    }
-  };
-
+  // Fetch designs (uploaded by architects)
   useEffect(() => {
-    if (user) {
-      fetchDesigns();
-    }
-  }, [user]);
+    let subscription: any;
+    async function fetchDesigns() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Assuming 'designs' table has image_url, title, architect_id, style, rooms, size, created_at, featured
+        // And a 'users' table mapping architect_id to username
+        const { data, error } = await supabase
+          .from("designs")
+          .select(`
+            id, image_url, title, style, rooms, size, created_at, featured, 
+            architect:architect_id ( id, username )
+          `)
+          .order("created_at", { ascending: false });
 
-  return {
-    designs,
-    setDesignImage,
-    designImage,
-    uploadingDesign,
-    uploadDesignImage,
-    uploadDesign,
-    toggleLikeDesign,
-    toggleSaveDesign,
-    fetchDesigns,
-    deleteDesign,
-  };
-};
+        if (error) throw error;
+        if (data) {
+          setDesigns(
+            data.map((d: any) => ({
+              id: d.id,
+              image_url: d.image_url,
+              title: d.title,
+              style: d.style,
+              rooms: d.rooms,
+              size: d.size,
+              date: d.created_at,
+              featured: d.featured,
+              architect_name: d.architect?.username || "Architect",
+              architect_id: d.architect?.id || "",
+            }))
+          );
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to load designs");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchDesigns();
+
+    // Supabase real-time subscription to 'designs' table
+    try {
+      // @ts-expect-error: Supabase V2 types
+      subscription = supabase
+        .channel('public:designs')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'designs' },
+          (payload: any) => {
+            // Refetch on update
+            fetchDesigns();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      // Real-time may not be available, fail silently
+    }
+
+    return () => {
+      if (subscription) supabase.removeChannel(subscription);
+    };
+  }, []);
+
+  return { designs, isLoading, error };
+}
