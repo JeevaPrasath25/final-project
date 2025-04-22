@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ProjectFilters } from "./ProjectFilters";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ProjectGridProps {
   filters?: ProjectFilters;
@@ -17,6 +18,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
   const [likedDesigns, setLikedDesigns] = useState<string[]>([]);
   const [filteredDesigns, setFilteredDesigns] = useState<Design[]>([]);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [errorAttempts, setErrorAttempts] = useState(0);
 
   // Apply filters when designs or filters change
   useEffect(() => {
@@ -51,9 +53,22 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   const handleRetry = async () => {
     setIsRetrying(true);
-    await fetchDesigns();
-    setIsRetrying(false);
+    setErrorAttempts(prev => prev + 1);
+    try {
+      await fetchDesigns();
+    } catch (e) {
+      console.error("Failed to fetch designs:", e);
+    } finally {
+      setIsRetrying(false);
+    }
   };
+
+  // Auto-retry once on initial error
+  useEffect(() => {
+    if (error && errorAttempts === 0) {
+      handleRetry();
+    }
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -65,27 +80,30 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-700 p-8 rounded-md my-6 text-center">
-        <div className="font-semibold mb-3 text-lg">Error loading designs</div>
-        <div className="mb-5">{error}</div>
-        <Button 
-          onClick={handleRetry} 
-          className="bg-red-600 hover:bg-red-700"
-          disabled={isRetrying}
-        >
-          {isRetrying ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Retrying...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Retry
-            </>
-          )}
-        </Button>
-      </div>
+      <Alert variant="destructive" className="my-6">
+        <AlertTitle className="text-lg font-medium">Connection error</AlertTitle>
+        <AlertDescription className="mt-2">
+          <p className="mb-4">We couldn't load the designs. Please check your internet connection and try again.</p>
+          <Button 
+            onClick={handleRetry} 
+            variant="outline"
+            disabled={isRetrying}
+            className="mt-2"
+          >
+            {isRetrying ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </>
+            )}
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 
