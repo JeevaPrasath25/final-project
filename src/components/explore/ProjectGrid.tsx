@@ -1,4 +1,5 @@
-import { useDesigns, Design } from "@/hooks/useDesigns";
+
+import { Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ArrowRight, Loader2, RefreshCw } from "lucide-react";
@@ -19,7 +20,6 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
   const [likedDesigns, setLikedDesigns] = useState<string[]>([]);
-  const [filteredDesigns, setFilteredDesigns] = useState<Design[]>([]);
   const [errorAttempts, setErrorAttempts] = useState(0);
 
   const fetchArchitectDesigns = async () => {
@@ -146,23 +146,31 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
     );
   }
 
-  // Apply filters
-  let filteredDesigns = [...designs];
-  if (filters) {
-    if (filters.style && filters.style !== "all") {
-      filteredDesigns = filteredDesigns.filter(design => design.style === filters.style);
+  // Apply filters to create a filtered copy of designs
+  const applyFilters = () => {
+    let filtered = [...designs];
+    
+    if (filters) {
+      if (filters.style && filters.style !== "all") {
+        filtered = filtered.filter(design => design.style === filters.style);
+      }
+      
+      if (filters.sortBy === "newest") {
+        filtered = filtered.sort((a, b) => 
+          new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
+        );
+      } else if (filters.sortBy === "oldest") {
+        filtered = filtered.sort((a, b) => 
+          new Date(a.date || "").getTime() - new Date(b.date || "").getTime()
+        );
+      }
     }
     
-    if (filters.sortBy === "newest") {
-      filteredDesigns = filteredDesigns.sort((a, b) => 
-        new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
-      );
-    } else if (filters.sortBy === "oldest") {
-      filteredDesigns = filteredDesigns.sort((a, b) => 
-        new Date(a.date || "").getTime() - new Date(b.date || "").getTime()
-      );
-    }
-  }
+    return filtered;
+  };
+  
+  // Get the filtered designs
+  const filteredDesigns = applyFilters();
 
   if (!filteredDesigns.length) {
     return (
