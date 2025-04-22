@@ -4,7 +4,8 @@ import DesignGrid from "@/components/designs/DesignGrid";
 import DesignUploadForm from "@/components/designs/DesignUploadForm";
 import { Design } from "@/hooks/useDesigns";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
 
 interface ArchitectDesignsProps {
   designs: Design[];
@@ -31,6 +32,7 @@ const ArchitectDesigns = ({
 }: ArchitectDesignsProps) => {
   const { user } = useAuth();
   const [myDesigns, setMyDesigns] = useState<Design[]>([]);
+  const tabsRef = useRef<{ value: string; trigger: React.RefObject<HTMLButtonElement> } | null>(null);
   
   useEffect(() => {
     // Filter designs to only show those created by the current user
@@ -55,7 +57,11 @@ const ArchitectDesigns = ({
           onLike={toggleLikeDesign}
           onSave={toggleSaveDesign}
           onDeleteDesign={deleteDesign}
-          onUploadClick={() => {}}
+          onUploadClick={() => {
+            // Programmatically switch to the upload tab
+            const uploadTab = document.querySelector('[data-radix-tab-trigger][value="upload"]') as HTMLButtonElement;
+            uploadTab?.click();
+          }}
         />
       </TabsContent>
       
@@ -73,3 +79,4 @@ const ArchitectDesigns = ({
 };
 
 export default ArchitectDesigns;
+
