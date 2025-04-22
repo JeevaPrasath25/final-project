@@ -1,4 +1,3 @@
-
 import { useDesigns, Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,40 +7,87 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ProjectFilters } from "./ProjectFilters";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProjectGridProps {
   filters?: ProjectFilters;
 }
 
 const ProjectGrid = ({ filters }: ProjectGridProps) => {
-  const { designs, isLoading, error, fetchDesigns } = useDesigns();
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [likedDesigns, setLikedDesigns] = useState<string[]>([]);
   const [filteredDesigns, setFilteredDesigns] = useState<Design[]>([]);
-  const [isRetrying, setIsRetrying] = useState(false);
   const [errorAttempts, setErrorAttempts] = useState(0);
 
-  // Apply filters when designs or filters change
-  useEffect(() => {
-    if (!designs) return;
-    
-    let result = [...designs];
-    
-    if (filters) {
-      // Apply style filter
-      if (filters.style && filters.style !== "all") {
-        result = result.filter(design => design.style === filters.style);
+  const fetchArchitectDesigns = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'architect');
+
+      if (usersError) throw usersError;
+
+      if (!users?.length) {
+        setDesigns([]);
+        return;
       }
+
+      const architectIds = users.map(user => user.id);
       
-      // Apply sorting
-      if (filters.sortBy === "newest") {
-        result = result.sort((a, b) => new Date(b.date || "").getTime() - new Date(a.date || "").getTime());
-      } else if (filters.sortBy === "oldest") {
-        result = result.sort((a, b) => new Date(a.date || "").getTime() - new Date(b.date || "").getTime());
-      }
+      const { data, error: designsError } = await supabase
+        .from('posts')
+        .select(`
+          id,
+          title,
+          image_url,
+          design_type,
+          created_at,
+          user_id,
+          user:user_id (
+            username,
+            role
+          )
+        `)
+        .in('user_id', architectIds)
+        .order('created_at', { ascending: false });
+
+      if (designsError) throw designsError;
+
+      const formattedDesigns = data.map((design: any) => ({
+        id: design.id,
+        title: design.title,
+        image_url: design.image_url,
+        style: design.design_type,
+        date: design.created_at,
+        architect_name: design.user?.username || "Unknown Architect",
+        architect_id: design.user_id,
+        user_id: design.user_id
+      }));
+
+      setDesigns(formattedDesigns);
+    } catch (err: any) {
+      console.error("Error in fetchArchitectDesigns:", err);
+      setError("Could not load designs. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    setFilteredDesigns(result);
-  }, [designs, filters]);
+  };
+
+  useEffect(() => {
+    fetchArchitectDesigns();
+  }, []);
+
+  useEffect(() => {
+    if (error && errorAttempts === 0) {
+      handleRetry();
+    }
+  }, [error]);
 
   const handleLike = (designId: string) => {
     setLikedDesigns(prev =>
@@ -55,20 +101,13 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
     setIsRetrying(true);
     setErrorAttempts(prev => prev + 1);
     try {
-      await fetchDesigns();
+      await fetchArchitectDesigns();
     } catch (e) {
       console.error("Failed to fetch designs:", e);
     } finally {
       setIsRetrying(false);
     }
   };
-
-  // Auto-retry once on initial error
-  useEffect(() => {
-    if (error && errorAttempts === 0) {
-      handleRetry();
-    }
-  }, [error]);
 
   if (isLoading) {
     return (
@@ -105,6 +144,24 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         </AlertDescription>
       </Alert>
     );
+  }
+
+  // Apply filters
+  let filteredDesigns = [...designs];
+  if (filters) {
+    if (filters.style && filters.style !== "all") {
+      filteredDesigns = filteredDesigns.filter(design => design.style === filters.style);
+    }
+    
+    if (filters.sortBy === "newest") {
+      filteredDesigns = filteredDesigns.sort((a, b) => 
+        new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
+      );
+    } else if (filters.sortBy === "oldest") {
+      filteredDesigns = filteredDesigns.sort((a, b) => 
+        new Date(a.date || "").getTime() - new Date(b.date || "").getTime()
+      );
+    }
   }
 
   if (!filteredDesigns.length) {
