@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -13,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Interface that matches the database structure
 interface ArchitectUser {
   id: string;
   username: string;
@@ -32,7 +30,6 @@ const Architects = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
-  // Fetch architects from database
   useEffect(() => {
     const fetchArchitects = async () => {
       try {
@@ -40,19 +37,16 @@ const Architects = () => {
         const { data, error } = await supabase
           .from('users')
           .select('*')
-          .eq('role', 'architect');
+          .eq('role', 'architect')
+          .neq('id', user?.id);
 
         if (error) {
           console.error("Error fetching architects:", error);
           throw error;
         }
-
-        // Filter out the current user
-        const filteredData = data.filter(architect => architect.id !== user?.id);
         
-        // Store original data (excluding current user)
-        setArchitects(filteredData);
-        setFilteredArchitects(filteredData);
+        setArchitects(data || []);
+        setFilteredArchitects(data || []);
       } catch (error) {
         console.error("Failed to fetch architects:", error);
       } finally {
@@ -61,7 +55,7 @@ const Architects = () => {
     };
 
     fetchArchitects();
-  }, [user]);
+  }, [user?.id]);
 
   const handleSearch = () => {
     if (!searchQuery) {
@@ -96,7 +90,6 @@ const Architects = () => {
             centered
           />
 
-          {/* Search bar */}
           <div className="max-w-md mx-auto mb-12">
             <div className="relative">
               <Input
@@ -117,7 +110,6 @@ const Architects = () => {
             </div>
           </div>
 
-          {/* Architects grid */}
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
