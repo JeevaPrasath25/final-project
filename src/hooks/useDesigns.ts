@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,7 +33,17 @@ export function useDesigns() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get user data if available, but continue if not authenticated
+      let userData = null;
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (!authError) {
+          userData = user;
+        }
+      } catch (authError) {
+        console.log("Not authenticated or auth error:", authError);
+        // Continue without user data
+      }
       
       const { data, error } = await supabase
         .from("posts")
@@ -54,32 +65,56 @@ export function useDesigns() {
       if (error) throw error;
       
       if (data) {
-        const { data: likesData, error: likesError } = await supabase
-          .from("design_likes")
-          .select("design_id, count", { count: "exact" })
-          .in("design_id", data.map((d: any) => d.id));
-          
-        const { data: savesData, error: savesError } = await supabase
-          .from("design_saves")
-          .select("design_id, count", { count: "exact" })
-          .in("design_id", data.map((d: any) => d.id));
-          
+        // Fetch likes and saves, but handle potential errors
+        let likesData = [];
+        let savesData = [];
+        
+        try {
+          const { data: likesResponse } = await supabase
+            .from("design_likes")
+            .select("design_id, count")
+            .in("design_id", data.map((d: any) => d.id));
+            
+          if (likesResponse) {
+            likesData = likesResponse;
+          }
+        } catch (likesError) {
+          console.error("Error fetching likes:", likesError);
+        }
+        
+        try {
+          const { data: savesResponse } = await supabase
+            .from("design_saves")
+            .select("design_id, count")
+            .in("design_id", data.map((d: any) => d.id));
+            
+          if (savesResponse) {
+            savesData = savesResponse;
+          }
+        } catch (savesError) {
+          console.error("Error fetching saves:", savesError);
+        }
+        
         let userLikes: string[] = [];
         let userSaves: string[] = [];
         
-        if (user) {
-          const { data: userLikesData } = await supabase
-            .from("design_likes")
-            .select("design_id")
-            .eq("user_id", user.id);
-            
-          const { data: userSavesData } = await supabase
-            .from("design_saves")
-            .select("design_id")
-            .eq("user_id", user.id);
-            
-          userLikes = userLikesData?.map(item => item.design_id) || [];
-          userSaves = userSavesData?.map(item => item.design_id) || [];
+        if (userData) {
+          try {
+            const { data: userLikesData } = await supabase
+              .from("design_likes")
+              .select("design_id")
+              .eq("user_id", userData.id);
+              
+            const { data: userSavesData } = await supabase
+              .from("design_saves")
+              .select("design_id")
+              .eq("user_id", userData.id);
+              
+            userLikes = userLikesData?.map(item => item.design_id) || [];
+            userSaves = userSavesData?.map(item => item.design_id) || [];
+          } catch (userDataError) {
+            console.error("Error fetching user likes/saves:", userDataError);
+          }
         }
         
         setDesigns(
@@ -105,11 +140,12 @@ export function useDesigns() {
         );
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load designs");
+      console.error("Error in fetchDesigns:", err);
+      setError("Could not load designs. Please check your connection and try again later.");
       toast({
         variant: "destructive",
         title: "Error loading designs",
-        description: err.message || "Failed to load designs",
+        description: "Could not load designs. Please check your connection and try again later.",
       });
     } finally {
       setIsLoading(false);
@@ -119,20 +155,26 @@ export function useDesigns() {
   useEffect(() => {
     fetchDesigns();
 
-    const channel = supabase
-      .channel('posts_changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'posts' },
-        () => {
-          fetchDesigns();
-        }
-      )
-      .subscribe();
+    // Set up realtime subscription only if Supabase is available
+    try {
+      const channel = supabase
+        .channel('posts_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'posts' },
+          () => {
+            fetchDesigns();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (subscriptionError) {
+      console.error("Error setting up realtime subscription:", subscriptionError);
+      // Continue without realtime updates
+    }
   }, []);
 
   const uploadDesignImage = async (): Promise<string | null> => {

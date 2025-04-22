@@ -2,7 +2,7 @@
 import { useDesigns, Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ArrowRight, Loader2 } from "lucide-react";
+import { Heart, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -13,9 +13,10 @@ interface ProjectGridProps {
 }
 
 const ProjectGrid = ({ filters }: ProjectGridProps) => {
-  const { designs, isLoading, error } = useDesigns();
+  const { designs, isLoading, error, fetchDesigns } = useDesigns();
   const [likedDesigns, setLikedDesigns] = useState<string[]>([]);
   const [filteredDesigns, setFilteredDesigns] = useState<Design[]>([]);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Apply filters when designs or filters change
   useEffect(() => {
@@ -48,6 +49,12 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
     );
   };
 
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    await fetchDesigns();
+    setIsRetrying(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-28">
@@ -58,9 +65,26 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-700 p-4 rounded-md my-6 text-center">
-        <div className="font-semibold mb-1">Error loading designs</div>
-        <div>{error}</div>
+      <div className="bg-red-50 text-red-700 p-8 rounded-md my-6 text-center">
+        <div className="font-semibold mb-3 text-lg">Error loading designs</div>
+        <div className="mb-5">{error}</div>
+        <Button 
+          onClick={handleRetry} 
+          className="bg-red-600 hover:bg-red-700"
+          disabled={isRetrying}
+        >
+          {isRetrying ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Retrying...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </>
+          )}
+        </Button>
       </div>
     );
   }
