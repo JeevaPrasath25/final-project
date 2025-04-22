@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +8,7 @@ export interface Design {
   title: string;
   architect_name: string;
   architect_id: string;
+  user_id: string;
   style?: string;
   rooms?: number;
   size?: number;
@@ -28,15 +28,12 @@ export function useDesigns() {
   const [uploadingDesign, setUploadingDesign] = useState(false);
   const { toast } = useToast();
 
-  // Function to fetch designs
   const fetchDesigns = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Get all designs by architects
       const { data, error } = await supabase
         .from("posts")
         .select(`
@@ -57,21 +54,16 @@ export function useDesigns() {
       if (error) throw error;
       
       if (data) {
-        // Get design likes count
         const { data: likesData, error: likesError } = await supabase
           .from("design_likes")
           .select("design_id, count", { count: "exact" })
-          .in("design_id", data.map((d: any) => d.id))
-          .group('design_id');
-
-        // Get design saves count
+          .in("design_id", data.map((d: any) => d.id));
+          
         const { data: savesData, error: savesError } = await supabase
           .from("design_saves")
           .select("design_id, count", { count: "exact" })
-          .in("design_id", data.map((d: any) => d.id))
-          .group('design_id');
+          .in("design_id", data.map((d: any) => d.id));
           
-        // Check if current user liked/saved any designs
         let userLikes: string[] = [];
         let userSaves: string[] = [];
         
@@ -90,7 +82,6 @@ export function useDesigns() {
           userSaves = userSavesData?.map(item => item.design_id) || [];
         }
         
-        // Process and combine data
         setDesigns(
           data.map((d: any) => {
             const designLikes = likesData?.find((l: any) => l.design_id === d.id);
@@ -104,7 +95,7 @@ export function useDesigns() {
               date: d.created_at,
               architect_name: d.user?.username || "Unknown Architect",
               architect_id: d.user?.id || "",
-              user_id: d.user_id, // Add user_id to help with filtering
+              user_id: d.user_id,
               liked_by_user: userLikes.includes(d.id),
               saved_by_user: userSaves.includes(d.id),
               design_likes: { count: designLikes?.count || 0 },
@@ -128,7 +119,6 @@ export function useDesigns() {
   useEffect(() => {
     fetchDesigns();
 
-    // Set up real-time subscription
     const channel = supabase
       .channel('posts_changes')
       .on(
@@ -145,26 +135,22 @@ export function useDesigns() {
     };
   }, []);
 
-  // Implement design upload functions
   const uploadDesignImage = async (): Promise<string | null> => {
     if (!designImage) return null;
     
     try {
       setUploadingDesign(true);
       
-      // Generate a unique file name
       const fileExt = designImage.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `designs/${fileName}`;
       
-      // Upload image to Supabase Storage
       const { error: uploadError, data } = await supabase.storage
         .from('designs')
         .upload(filePath, designImage);
         
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('designs')
         .getPublicUrl(filePath);
@@ -203,7 +189,6 @@ export function useDesigns() {
         
       if (error) throw error;
 
-      // Update local state immediately after successful upload
       if (data) {
         const newDesign: Design = {
           id: data.id,
@@ -211,7 +196,7 @@ export function useDesigns() {
           title: data.title,
           architect_name: user.user_metadata.username || "Unknown Architect",
           architect_id: user.id,
-          user_id: user.id, // Add user_id for filtering
+          user_id: user.id,
           date: data.created_at,
           liked_by_user: false,
           saved_by_user: false,
@@ -252,20 +237,17 @@ export function useDesigns() {
       }
 
       if (isLiked) {
-        // Unlike
         await supabase
           .from('design_likes')
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
       } else {
-        // Like
         await supabase
           .from('design_likes')
           .insert([{ design_id: designId, user_id: user.id }]);
       }
 
-      // Update the designs array to reflect the change
       setDesigns(prev => 
         prev.map(design => {
           if (design.id === designId) {
@@ -281,7 +263,6 @@ export function useDesigns() {
           return design;
         })
       );
-
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -304,20 +285,17 @@ export function useDesigns() {
       }
 
       if (isSaved) {
-        // Unsave
         await supabase
           .from('design_saves')
           .delete()
           .eq('design_id', designId)
           .eq('user_id', user.id);
       } else {
-        // Save
         await supabase
           .from('design_saves')
           .insert([{ design_id: designId, user_id: user.id }]);
       }
 
-      // Update the designs array to reflect the change
       setDesigns(prev => 
         prev.map(design => {
           if (design.id === designId) {
@@ -333,7 +311,6 @@ export function useDesigns() {
           return design;
         })
       );
-
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -363,7 +340,6 @@ export function useDesigns() {
 
       if (error) throw error;
 
-      // Remove the deleted design from the array
       setDesigns(prev => prev.filter(design => design.id !== designId));
 
       toast({
