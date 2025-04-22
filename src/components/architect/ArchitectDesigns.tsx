@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DesignGrid from "@/components/designs/DesignGrid";
 import DesignUploadForm from "@/components/designs/DesignUploadForm";
 import { Design } from "@/hooks/useDesigns";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
 
 interface ArchitectDesignsProps {
   designs: Design[];
@@ -27,6 +29,19 @@ const ArchitectDesigns = ({
   toggleSaveDesign,
   deleteDesign
 }: ArchitectDesignsProps) => {
+  const { user } = useAuth();
+  const [myDesigns, setMyDesigns] = useState<Design[]>([]);
+  
+  useEffect(() => {
+    // Filter designs to only show those created by the current user
+    if (user && designs) {
+      const filteredDesigns = designs.filter(design => 
+        design.architect_id === user.id || design.user_id === user.id
+      );
+      setMyDesigns(filteredDesigns);
+    }
+  }, [designs, user]);
+
   return (
     <Tabs defaultValue="designs" className="space-y-6">
       <TabsList className="mb-4">
@@ -36,7 +51,7 @@ const ArchitectDesigns = ({
       
       <TabsContent value="designs" className="space-y-6">
         <DesignGrid
-          designs={designs}
+          designs={myDesigns}
           onLike={toggleLikeDesign}
           onSave={toggleSaveDesign}
           onDeleteDesign={deleteDesign}

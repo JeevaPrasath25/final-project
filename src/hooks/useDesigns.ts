@@ -33,6 +33,10 @@ export function useDesigns() {
     setIsLoading(true);
     setError(null);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get all designs by architects
       const { data, error } = await supabase
         .from("posts")
         .select(`
@@ -41,36 +45,81 @@ export function useDesigns() {
           title,
           design_type as style,
           created_at,
+          user_id,
           user:user_id (
             id,
             username,
             role
           )
         `)
-        .eq('user.role', 'architect')
-        .order("created_at", { ascending: false });
-
+        .eq('user.role', 'architect');
+      
       if (error) throw error;
       
       if (data) {
+        // Get design likes count
+        const { data: likesData, error: likesError } = await supabase
+          .from("design_likes")
+          .select("design_id, count", { count: "exact" })
+          .in("design_id", data.map((d: any) => d.id))
+          .group('design_id');
+
+        // Get design saves count
+        const { data: savesData, error: savesError } = await supabase
+          .from("design_saves")
+          .select("design_id, count", { count: "exact" })
+          .in("design_id", data.map((d: any) => d.id))
+          .group('design_id');
+          
+        // Check if current user liked/saved any designs
+        let userLikes: string[] = [];
+        let userSaves: string[] = [];
+        
+        if (user) {
+          const { data: userLikesData } = await supabase
+            .from("design_likes")
+            .select("design_id")
+            .eq("user_id", user.id);
+            
+          const { data: userSavesData } = await supabase
+            .from("design_saves")
+            .select("design_id")
+            .eq("user_id", user.id);
+            
+          userLikes = userLikesData?.map(item => item.design_id) || [];
+          userSaves = userSavesData?.map(item => item.design_id) || [];
+        }
+        
+        // Process and combine data
         setDesigns(
-          data.map((d: any) => ({
-            id: d.id,
-            image_url: d.image_url,
-            title: d.title,
-            style: d.style,
-            date: d.created_at,
-            architect_name: d.user?.username || "Unknown Architect",
-            architect_id: d.user?.id || "",
-            liked_by_user: false,
-            saved_by_user: false,
-            design_likes: { count: 0 },
-            design_saves: { count: 0 }
-          }))
+          data.map((d: any) => {
+            const designLikes = likesData?.find((l: any) => l.design_id === d.id);
+            const designSaves = savesData?.find((s: any) => s.design_id === d.id);
+            
+            return {
+              id: d.id,
+              image_url: d.image_url,
+              title: d.title,
+              style: d.style,
+              date: d.created_at,
+              architect_name: d.user?.username || "Unknown Architect",
+              architect_id: d.user?.id || "",
+              user_id: d.user_id, // Add user_id to help with filtering
+              liked_by_user: userLikes.includes(d.id),
+              saved_by_user: userSaves.includes(d.id),
+              design_likes: { count: designLikes?.count || 0 },
+              design_saves: { count: designSaves?.count || 0 }
+            };
+          })
         );
       }
     } catch (err: any) {
       setError(err.message || "Failed to load designs");
+      toast({
+        variant: "destructive",
+        title: "Error loading designs",
+        description: err.message || "Failed to load designs",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +211,7 @@ export function useDesigns() {
           title: data.title,
           architect_name: user.user_metadata.username || "Unknown Architect",
           architect_id: user.id,
+          user_id: user.id, // Add user_id for filtering
           date: data.created_at,
           liked_by_user: false,
           saved_by_user: false,
