@@ -20,8 +20,8 @@ const ExploreContent = () => {
     <main className="flex-grow bg-gray-50 py-12">
       <div className="container mx-auto">
         <SectionHeading
-          title="Explore Designs"
-          subtitle="Discover architectural projects and find inspiration for your next home"
+          title="Explore Architect Designs"
+          subtitle="Browse professional architectural designs and find your perfect match"
           className="mb-8"
         />
 
@@ -32,7 +32,7 @@ const ExploreContent = () => {
           <div className="flex-grow">
             <div className="flex justify-between items-center mb-6">
               <p className="text-muted-foreground">
-                Showing architect-uploaded designs
+                Showing designs posted by professional architects
               </p>
             </div>
             <ProjectGrid />

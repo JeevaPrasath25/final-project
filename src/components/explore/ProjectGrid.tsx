@@ -51,7 +51,11 @@ const ProjectGrid = () => {
         <Card key={design.id} className="overflow-hidden design-card border-none shadow-lg group">
           <Link to={`/project/${design.id}`}>
             <div className="h-64 overflow-hidden bg-gray-100">
-              <img src={design.image_url} alt={design.title} className="design-image w-full h-full object-cover" />
+              <img 
+                src={design.image_url} 
+                alt={design.title} 
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+              />
             </div>
           </Link>
 
@@ -76,28 +80,27 @@ const ProjectGrid = () => {
                 />
               </Button>
             </div>
+            
+            <Link 
+              to={`/architect/${design.architect_id}`} 
+              className="text-sm font-medium text-design-primary hover:underline block mb-3"
+            >
+              by {design.architect_name}
+            </Link>
+
             <div className="flex flex-wrap gap-2 mb-4">
               {design.style && (
                 <Badge variant="outline" className="text-xs">{design.style}</Badge>
               )}
-              {design.rooms && (
-                <Badge variant="outline" className="text-xs">{design.rooms} Room{design.rooms > 1 ? "s" : ""}</Badge>
-              )}
-              {design.size && (
-                <Badge variant="outline" className="text-xs">{design.size} sq ft</Badge>
-              )}
-              {design.featured && (
-                <Badge className="bg-design-primary hover:bg-design-primary/90">Featured</Badge>
+              {design.date && (
+                <span className="text-xs text-muted-foreground">
+                  {new Date(design.date).toLocaleDateString()}
+                </span>
               )}
             </div>
-            <div className="flex justify-between items-center mb-3">
-              <Link to={`/architect/${design.architect_id}`} className="text-sm font-medium text-design-primary hover:underline">
-                {design.architect_name}
-              </Link>
-              <span className="text-xs text-muted-foreground">{design.date && new Date(design.date).toLocaleDateString()}</span>
-            </div>
-            <Button variant="ghost" size="sm" className="text-design-primary mt-2" asChild>
-              <Link to={`/project/${design.id}`} className="flex items-center">
+
+            <Button variant="ghost" size="sm" className="text-design-primary w-full" asChild>
+              <Link to={`/project/${design.id}`} className="flex items-center justify-center">
                 View Details
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Link>

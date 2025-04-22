@@ -24,24 +24,33 @@ export function useDesigns() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch designs (uploaded by architects)
   useEffect(() => {
     let subscription: any;
+    
     async function fetchDesigns() {
       setIsLoading(true);
       setError(null);
       try {
-        // Assuming 'designs' table has image_url, title, architect_id, style, rooms, size, created_at, featured
-        // And a 'users' table mapping architect_id to username
+        // Join with users table to get architect information
         const { data, error } = await supabase
-          .from("designs")
+          .from("posts")
           .select(`
-            id, image_url, title, style, rooms, size, created_at, featured, 
-            architect:user_id ( id, username )
+            id,
+            image_url,
+            title,
+            design_type as style,
+            created_at,
+            user:user_id (
+              id,
+              username,
+              role
+            )
           `)
+          .eq('user.role', 'architect')
           .order("created_at", { ascending: false });
 
         if (error) throw error;
+        
         if (data) {
           setDesigns(
             data.map((d: any) => ({
@@ -49,12 +58,9 @@ export function useDesigns() {
               image_url: d.image_url,
               title: d.title,
               style: d.style,
-              rooms: d.rooms,
-              size: d.size,
               date: d.created_at,
-              featured: d.featured,
-              architect_name: d.architect?.username || "Architect",
-              architect_id: d.architect?.id || "",
+              architect_name: d.user?.username || "Unknown Architect",
+              architect_id: d.user?.id || "",
               liked_by_user: false,
               saved_by_user: false,
               design_likes: { count: 0 },
@@ -71,21 +77,20 @@ export function useDesigns() {
 
     fetchDesigns();
 
-    // Supabase real-time subscription to 'designs' table
+    // Set up real-time subscription
     try {
       subscription = supabase
-        .channel('public:designs')
+        .channel('posts_changes')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public', table: 'designs' },
-          (payload: any) => {
-            // Refetch on update
+          { event: '*', schema: 'public', table: 'posts' },
+          () => {
             fetchDesigns();
           }
         )
         .subscribe();
     } catch (e) {
-      // Real-time may not be available, fail silently
+      // Real-time subscription failed silently
     }
 
     return () => {
