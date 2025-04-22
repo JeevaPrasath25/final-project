@@ -28,77 +28,71 @@ export function useDesigns() {
   const [uploadingDesign, setUploadingDesign] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    let subscription: any;
-    
-    async function fetchDesigns() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        // Join with users table to get architect information
-        const { data, error } = await supabase
-          .from("posts")
-          .select(`
+  // Function to fetch designs
+  const fetchDesigns = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          id,
+          image_url,
+          title,
+          design_type as style,
+          created_at,
+          user:user_id (
             id,
-            image_url,
-            title,
-            design_type as style,
-            created_at,
-            user:user_id (
-              id,
-              username,
-              role
-            )
-          `)
-          .eq('user.role', 'architect')
-          .order("created_at", { ascending: false });
+            username,
+            role
+          )
+        `)
+        .eq('user.role', 'architect')
+        .order("created_at", { ascending: false });
 
-        if (error) throw error;
-        
-        if (data) {
-          setDesigns(
-            data.map((d: any) => ({
-              id: d.id,
-              image_url: d.image_url,
-              title: d.title,
-              style: d.style,
-              date: d.created_at,
-              architect_name: d.user?.username || "Unknown Architect",
-              architect_id: d.user?.id || "",
-              liked_by_user: false,
-              saved_by_user: false,
-              design_likes: { count: 0 },
-              design_saves: { count: 0 }
-            }))
-          );
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to load designs");
-      } finally {
-        setIsLoading(false);
+      if (error) throw error;
+      
+      if (data) {
+        setDesigns(
+          data.map((d: any) => ({
+            id: d.id,
+            image_url: d.image_url,
+            title: d.title,
+            style: d.style,
+            date: d.created_at,
+            architect_name: d.user?.username || "Unknown Architect",
+            architect_id: d.user?.id || "",
+            liked_by_user: false,
+            saved_by_user: false,
+            design_likes: { count: 0 },
+            design_saves: { count: 0 }
+          }))
+        );
       }
+    } catch (err: any) {
+      setError(err.message || "Failed to load designs");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchDesigns();
 
     // Set up real-time subscription
-    try {
-      subscription = supabase
-        .channel('posts_changes')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'posts' },
-          () => {
-            fetchDesigns();
-          }
-        )
-        .subscribe();
-    } catch (e) {
-      // Real-time subscription failed silently
-    }
+    const channel = supabase
+      .channel('posts_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        () => {
+          fetchDesigns();
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (subscription) supabase.removeChannel(subscription);
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -143,12 +137,10 @@ export function useDesigns() {
     try {
       setUploadingDesign(true);
       
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in to upload designs");
       
-      // Insert the design into the database
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('posts')
         .insert([
           { 
@@ -156,9 +148,28 @@ export function useDesigns() {
             image_url: imageUrl,
             user_id: user.id,
           }
-        ]);
+        ])
+        .select()
+        .single();
         
       if (error) throw error;
+
+      // Update local state immediately after successful upload
+      if (data) {
+        const newDesign: Design = {
+          id: data.id,
+          image_url: data.image_url,
+          title: data.title,
+          architect_name: user.user_metadata.username || "Unknown Architect",
+          architect_id: user.id,
+          date: data.created_at,
+          liked_by_user: false,
+          saved_by_user: false,
+          design_likes: { count: 0 },
+          design_saves: { count: 0 }
+        };
+        setDesigns(prev => [newDesign, ...prev]);
+      }
       
       toast({
         title: "Design uploaded",
@@ -330,6 +341,7 @@ export function useDesigns() {
     uploadDesignImage,
     toggleLikeDesign,
     toggleSaveDesign,
-    deleteDesign
+    deleteDesign,
+    fetchDesigns
   };
 }
