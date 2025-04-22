@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Interface that matches the database structure
 interface ArchitectUser {
@@ -29,6 +30,7 @@ const Architects = () => {
   const [architects, setArchitects] = useState<ArchitectUser[]>([]);
   const [filteredArchitects, setFilteredArchitects] = useState<ArchitectUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   // Fetch architects from database
   useEffect(() => {
@@ -45,11 +47,12 @@ const Architects = () => {
           throw error;
         }
 
-        console.log("Fetched architects:", data);
+        // Filter out the current user
+        const filteredData = data.filter(architect => architect.id !== user?.id);
         
-        // Store original data
-        setArchitects(data);
-        setFilteredArchitects(data);
+        // Store original data (excluding current user)
+        setArchitects(filteredData);
+        setFilteredArchitects(filteredData);
       } catch (error) {
         console.error("Failed to fetch architects:", error);
       } finally {
@@ -58,7 +61,7 @@ const Architects = () => {
     };
 
     fetchArchitects();
-  }, []);
+  }, [user]);
 
   const handleSearch = () => {
     if (!searchQuery) {

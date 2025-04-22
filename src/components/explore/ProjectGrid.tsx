@@ -5,11 +5,40 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ProjectFilters } from "./ProjectFilters";
 
-const ProjectGrid = () => {
+interface ProjectGridProps {
+  filters?: ProjectFilters;
+}
+
+const ProjectGrid = ({ filters }: ProjectGridProps) => {
   const { designs, isLoading, error } = useDesigns();
   const [likedDesigns, setLikedDesigns] = useState<string[]>([]);
+  const [filteredDesigns, setFilteredDesigns] = useState<Design[]>([]);
+
+  // Apply filters when designs or filters change
+  useEffect(() => {
+    if (!designs) return;
+    
+    let result = [...designs];
+    
+    if (filters) {
+      // Apply style filter
+      if (filters.style && filters.style !== "all") {
+        result = result.filter(design => design.style === filters.style);
+      }
+      
+      // Apply sorting
+      if (filters.sortBy === "newest") {
+        result = result.sort((a, b) => new Date(b.date || "").getTime() - new Date(a.date || "").getTime());
+      } else if (filters.sortBy === "oldest") {
+        result = result.sort((a, b) => new Date(a.date || "").getTime() - new Date(b.date || "").getTime());
+      }
+    }
+    
+    setFilteredDesigns(result);
+  }, [designs, filters]);
 
   const handleLike = (designId: string) => {
     setLikedDesigns(prev =>
@@ -36,18 +65,18 @@ const ProjectGrid = () => {
     );
   }
 
-  if (!designs.length) {
+  if (!filteredDesigns.length) {
     return (
       <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-        <h3 className="text-xl font-medium mb-2">No architect designs yet</h3>
-        <p className="text-muted-foreground mb-6">Architects haven't shared any designs yet. Check back soon!</p>
+        <h3 className="text-xl font-medium mb-2">No architect designs found</h3>
+        <p className="text-muted-foreground mb-6">No designs match your current filters or no architects have shared designs yet.</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {designs.map((design) => (
+      {filteredDesigns.map((design) => (
         <Card key={design.id} className="overflow-hidden design-card border-none shadow-lg group">
           <Link to={`/project/${design.id}`}>
             <div className="h-64 overflow-hidden bg-gray-100">
@@ -81,12 +110,14 @@ const ProjectGrid = () => {
               </Button>
             </div>
             
-            <Link 
-              to={`/architect/${design.architect_id}`} 
-              className="text-sm font-medium text-design-primary hover:underline block mb-3"
-            >
-              by {design.architect_name}
-            </Link>
+            {design.architect_name && (
+              <Link 
+                to={`/architect/${design.architect_id}`} 
+                className="text-sm font-medium text-design-primary hover:underline block mb-3"
+              >
+                by {design.architect_name}
+              </Link>
+            )}
 
             <div className="flex flex-wrap gap-2 mb-4">
               {design.style && (

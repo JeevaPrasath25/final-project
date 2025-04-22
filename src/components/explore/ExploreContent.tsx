@@ -35,7 +35,7 @@ const ExploreContent = () => {
                 Showing designs posted by professional architects
               </p>
             </div>
-            <ProjectGrid />
+            <ProjectGrid filters={filters} />
           </div>
         </div>
       </div>
