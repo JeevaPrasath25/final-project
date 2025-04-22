@@ -51,7 +51,7 @@ export function useDesigns() {
           id,
           image_url,
           title,
-          design_type as style,
+          design_type,
           created_at,
           user_id,
           user:user_id (
@@ -126,7 +126,7 @@ export function useDesigns() {
               id: d.id,
               image_url: d.image_url,
               title: d.title,
-              style: d.style,
+              style: d.design_type, // Fixed: Use design_type as style
               date: d.created_at,
               architect_name: d.user?.username || "Unknown Architect",
               architect_id: d.user?.id || "",
