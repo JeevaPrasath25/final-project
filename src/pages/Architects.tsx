@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -6,10 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import ArchitectCard from "@/components/architects/ArchitectCard";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ArchitectUser {
@@ -75,10 +73,6 @@ const Architects = () => {
     setFilteredArchitects(results);
   };
 
-  const getInitial = (name: string | null) => {
-    return name ? name.charAt(0).toUpperCase() : 'A';
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -117,46 +111,7 @@ const Architects = () => {
           ) : filteredArchitects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredArchitects.map((architect) => (
-                <Card key={architect.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={architect.avatar_url || undefined} alt={architect.username} />
-                        <AvatarFallback className="bg-primary text-white text-lg">
-                          {getInitial(architect.username)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="text-lg font-semibold">{architect.username}</h3>
-                        {architect.skills && (
-                          <p className="text-sm text-primary">{architect.skills}</p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {architect.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{architect.bio}</p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {architect.experience && (
-                        <Badge variant="outline">{architect.experience}</Badge>
-                      )}
-                      {architect.social_links && (
-                        <Badge variant="outline">{architect.social_links}</Badge>
-                      )}
-                    </div>
-                    
-                    <div className="flex justify-between">
-                      <Button asChild variant="default" size="sm">
-                        <Link to={`/architect/${architect.id}`}>View Profile</Link>
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Contact
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ArchitectCard key={architect.id} architect={architect} />
               ))}
             </div>
           ) : (

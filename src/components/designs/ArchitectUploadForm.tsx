@@ -20,7 +20,7 @@ import { useAiGenerator } from "@/hooks/useAiGenerator";
 const uploadFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   category: z.enum(["floorplan", "inspiration"]),
-  // Conditional fields
+  // Conditional fields based on category
   rooms: z.number().min(1).max(20).optional(),
   squareFeet: z.number().min(100).max(20000).optional(),
   designType: z.string().optional(),

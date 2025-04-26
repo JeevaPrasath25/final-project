@@ -23,6 +23,7 @@ export function useMessages(otherUserId: string) {
 
     const fetchMessages = async () => {
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('messages')
           .select('*')
@@ -63,5 +64,24 @@ export function useMessages(otherUserId: string) {
     };
   }, [user, otherUserId]);
 
-  return { messages, isLoading, error };
+  const sendMessage = async (content: string) => {
+    if (!user || !otherUserId) return false;
+
+    try {
+      const { error } = await supabase.from('messages').insert({
+        content,
+        sender_id: user.id,
+        receiver_id: otherUserId
+      });
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err as Error);
+      return false;
+    }
+  };
+
+  return { messages, isLoading, error, sendMessage };
 }

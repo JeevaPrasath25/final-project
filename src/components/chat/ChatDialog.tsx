@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMessages } from "@/hooks/useMessages";
@@ -24,7 +23,7 @@ export function ChatDialog({ isOpen, onClose, architect }: ChatDialogProps) {
   const [sending, setSending] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { messages, isLoading, error } = useMessages(architect.id);
+  const { messages, isLoading, error, sendMessage } = useMessages(architect.id);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,18 +31,16 @@ export function ChatDialog({ isOpen, onClose, architect }: ChatDialogProps) {
 
     setSending(true);
     try {
-      const { error } = await supabase.from('messages').insert({
-        content: newMessage.trim(),
-        sender_id: user.id,
-        receiver_id: architect.id
-      });
+      const success = await sendMessage(newMessage.trim());
 
-      if (error) throw error;
-
-      setNewMessage("");
-      toast({
-        description: "Message sent successfully",
-      });
+      if (success) {
+        setNewMessage("");
+        toast({
+          description: "Message sent successfully",
+        });
+      } else {
+        throw new Error("Failed to send message");
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

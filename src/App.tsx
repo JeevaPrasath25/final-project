@@ -19,7 +19,6 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import ProjectDetail from "./pages/ProjectDetail";
 import ArchitectProfile from "./pages/ArchitectProfile";
-import ArchitectProfilePage from "./pages/ArchitectProfile";
 import MyProfile from "./pages/MyProfile";
 import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -53,7 +52,7 @@ const App = () => (
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/project/:id" element={<ProjectDetail />} />
             <Route path="/architect/:id" element={<ArchitectProfile />} />
-            <Route path="/architect-profile" element={<ArchitectProfilePage />} />
+            <Route path="/architect-profile" element={<MyProfile />} />
             <Route path="/my-profile" element={<MyProfile />} />
             <Route path="/homeowner-dashboard" element={<HomeownerDashboard />} />
             <Route path="/design-upload" element={<DesignUpload />} />
