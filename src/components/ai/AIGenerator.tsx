@@ -61,7 +61,9 @@ const AIGenerator = () => {
       try {
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: JSON.stringify({ 
-            prompt,
+            prompt: generationType === "floorplan" 
+              ? `Detailed architectural floor plan showing ${prompt}. Top-down view, clean lines, measurements, room labels.`
+              : prompt,
             type: generationType
           })
         });
@@ -79,7 +81,6 @@ const AIGenerator = () => {
         }
       } catch (edgeFuncError) {
         console.log("Edge function error, falling back to mock images", edgeFuncError);
-        // Silently fail and continue to fallback
       }
       
       await new Promise(resolve => setTimeout(resolve, 1500));

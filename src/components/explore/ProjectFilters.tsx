@@ -28,22 +28,24 @@ export type ProjectFilters = {
   rooms: string;
   size: [number, number];
   sortBy: string;
+  type: "house" | "floorplan";
 };
 
 interface ProjectFiltersProps {
   onFilterChange: (filters: ProjectFilters) => void;
+  type: "house" | "floorplan";
 }
 
-const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
+const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
   const isMobile = useIsMobile();
   const [filters, setFilters] = useState<ProjectFilters>({
     style: "all",
     rooms: "all",
     size: [0, 5000],
     sortBy: "newest",
+    type: type
   });
   
-  // Apply filter changes immediately
   useEffect(() => {
     onFilterChange(filters);
   }, [filters, onFilterChange]);
@@ -59,73 +61,78 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
       rooms: "all",
       size: [0, 5000],
       sortBy: "newest",
+      type: type
     };
     setFilters(defaultFilters);
   };
 
   const FiltersContent = () => (
     <div className="space-y-6">
-      <div>
-        <label className="text-sm font-medium block mb-2">
-          Architectural Style
-        </label>
-        <Select
-          value={filters.style}
-          onValueChange={(value) => handleFilterChange("style", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="All Styles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Styles</SelectItem>
-            <SelectItem value="modern">Modern</SelectItem>
-            <SelectItem value="minimalist">Minimalist</SelectItem>
-            <SelectItem value="contemporary">Contemporary</SelectItem>
-            <SelectItem value="traditional">Traditional</SelectItem>
-            <SelectItem value="industrial">Industrial</SelectItem>
-            <SelectItem value="mediterranean">Mediterranean</SelectItem>
-            <SelectItem value="scandinavian">Scandinavian</SelectItem>
-            <SelectItem value="farmhouse">Farmhouse</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium block mb-2">Number of Rooms</label>
-        <Select
-          value={filters.rooms}
-          onValueChange={(value) => handleFilterChange("rooms", value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Any" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Any</SelectItem>
-            <SelectItem value="1">1 Room</SelectItem>
-            <SelectItem value="2">2 Rooms</SelectItem>
-            <SelectItem value="3">3 Rooms</SelectItem>
-            <SelectItem value="4">4 Rooms</SelectItem>
-            <SelectItem value="5+">5+ Rooms</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <div className="flex justify-between mb-2">
-          <label className="text-sm font-medium">Size (sq ft)</label>
-          <span className="text-sm text-muted-foreground">
-            {filters.size[0]} - {filters.size[1]}
-          </span>
+      {type === "house" ? (
+        <div>
+          <label className="text-sm font-medium block mb-2">
+            Architectural Style
+          </label>
+          <Select
+            value={filters.style}
+            onValueChange={(value) => handleFilterChange("style", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All Styles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Styles</SelectItem>
+              <SelectItem value="modern">Modern</SelectItem>
+              <SelectItem value="minimalist">Minimalist</SelectItem>
+              <SelectItem value="contemporary">Contemporary</SelectItem>
+              <SelectItem value="traditional">Traditional</SelectItem>
+              <SelectItem value="industrial">Industrial</SelectItem>
+              <SelectItem value="mediterranean">Mediterranean</SelectItem>
+              <SelectItem value="scandinavian">Scandinavian</SelectItem>
+              <SelectItem value="farmhouse">Farmhouse</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Slider
-          min={0}
-          max={5000}
-          step={100}
-          value={filters.size}
-          onValueChange={(value) => handleFilterChange("size", value as [number, number])}
-          className="my-6"
-        />
-      </div>
+      ) : (
+        <>
+          <div>
+            <label className="text-sm font-medium block mb-2">Number of Rooms</label>
+            <Select
+              value={filters.rooms}
+              onValueChange={(value) => handleFilterChange("rooms", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any</SelectItem>
+                <SelectItem value="1">1 Room</SelectItem>
+                <SelectItem value="2">2 Rooms</SelectItem>
+                <SelectItem value="3">3 Rooms</SelectItem>
+                <SelectItem value="4">4 Rooms</SelectItem>
+                <SelectItem value="5+">5+ Rooms</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <div className="flex justify-between mb-2">
+              <label className="text-sm font-medium">Size (sq ft)</label>
+              <span className="text-sm text-muted-foreground">
+                {filters.size[0]} - {filters.size[1]}
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={5000}
+              step={100}
+              value={filters.size}
+              onValueChange={(value) => handleFilterChange("size", value as [number, number])}
+              className="my-6"
+            />
+          </div>
+        </>
+      )}
 
       <div className="pt-4 flex justify-between">
         <Button variant="outline" onClick={resetFilters} size="sm">
@@ -183,7 +190,6 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
         )}
       </div>
 
-      {/* Sort Dropdown - Always visible */}
       <div className="ml-auto">
         <SortSelect />
       </div>
