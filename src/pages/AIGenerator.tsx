@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import Header from "@/components/layout/Header";
+import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AIGenerator from "@/components/ai/AIGenerator";
 
@@ -15,7 +15,7 @@ const AIGeneratorPage = () => {
           content="Generate dream home designs and floor plans with AI. Describe your vision and see it come to life."
         />
       </Helmet>
-      <Header />
+      <Navbar />
       <AIGenerator />
       <Footer />
     </>
