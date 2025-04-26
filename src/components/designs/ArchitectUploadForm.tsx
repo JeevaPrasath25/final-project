@@ -22,9 +22,8 @@ const ArchitectUploadForm = () => {
     uploadingDesign,
     handleDesignImageChange,
     onSubmit,
+    category,
   } = useDesignUpload();
-
-  const category = form.watch("category");
 
   return (
     <Card>

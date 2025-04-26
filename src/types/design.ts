@@ -1,3 +1,4 @@
+
 export type DesignCategory = "floorplan" | "inspiration";
 export type DesignType = 
   | "modern"
@@ -21,17 +22,26 @@ export const DESIGN_TYPES: DesignType[] = [
 ];
 
 export interface FloorPlanMetadata {
+  category: "floorplan";
   rooms: number;
   squareFeet: number;
 }
 
 export interface InspirationMetadata {
+  category: "inspiration";
   designType: DesignType;
 }
 
 export type DesignMetadata = FloorPlanMetadata | InspirationMetadata;
 
 export interface DesignFormData {
+  title: string;
+  category: DesignCategory;
+  metadata: DesignMetadata;
+}
+
+// Schema definition for the form
+export interface DesignFormSchemaType {
   title: string;
   category: DesignCategory;
   metadata: DesignMetadata;

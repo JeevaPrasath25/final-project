@@ -5,7 +5,7 @@ import { UseFormReturn } from "react-hook-form";
 import { DesignFormData, DESIGN_TYPES } from "@/types/design";
 
 interface InspirationFieldsProps {
-  form: UseFormReturn<DesignFormData>;
+  form: UseFormReturn<any>;
 }
 
 export const InspirationFields = ({ form }: InspirationFieldsProps) => {
@@ -25,7 +25,7 @@ export const InspirationFields = ({ form }: InspirationFieldsProps) => {
             <SelectContent>
               {DESIGN_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type}
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
                 </SelectItem>
               ))}
             </SelectContent>

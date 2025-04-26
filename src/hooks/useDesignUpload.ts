@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,14 +7,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useDesigns } from "@/hooks/useDesigns";
 import { DesignCategory, DesignType, DESIGN_TYPES } from "@/types/design";
 
+// Create a Zod schema that properly handles the discriminated union
 const designFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   category: z.enum(["floorplan", "inspiration"] as const),
   metadata: z.discriminatedUnion("category", [
     z.object({
       category: z.literal("floorplan"),
-      rooms: z.number().min(1).max(20),
-      squareFeet: z.number().min(100).max(20000),
+      rooms: z.number().int().min(1).max(20),
+      squareFeet: z.number().int().min(100).max(20000),
     }),
     z.object({
       category: z.literal("inspiration"),
@@ -35,6 +37,7 @@ export const useDesignUpload = () => {
     uploadDesignImage,
   } = useDesigns();
 
+  // Initialize the form with the correct defaults for both metadata types
   const form = useForm<DesignFormValues>({
     resolver: zodResolver(designFormSchema),
     defaultValues: {
@@ -46,6 +49,21 @@ export const useDesignUpload = () => {
       },
     },
   });
+
+  // When the category changes, update the metadata structure
+  const category = form.watch("category");
+  if (category === "floorplan" && form.getValues("metadata.category") !== "floorplan") {
+    form.setValue("metadata", {
+      category: "floorplan",
+      rooms: 1,
+      squareFeet: 1000,
+    });
+  } else if (category === "inspiration" && form.getValues("metadata.category") !== "inspiration") {
+    form.setValue("metadata", {
+      category: "inspiration",
+      designType: "modern",
+    });
+  }
 
   const handleDesignImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -108,5 +126,6 @@ export const useDesignUpload = () => {
     uploadingDesign,
     handleDesignImageChange,
     onSubmit,
+    category,
   };
 };

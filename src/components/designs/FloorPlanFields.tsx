@@ -5,7 +5,7 @@ import { UseFormReturn } from "react-hook-form";
 import { DesignFormData } from "@/types/design";
 
 interface FloorPlanFieldsProps {
-  form: UseFormReturn<DesignFormData>;
+  form: UseFormReturn<any>;
 }
 
 export const FloorPlanFields = ({ form }: FloorPlanFieldsProps) => {
