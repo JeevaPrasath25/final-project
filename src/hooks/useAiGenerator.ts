@@ -38,7 +38,7 @@ export const useAiGenerator = () => {
       }
       
       if (!data?.image) {
-        throw new Error('No image URL returned from API');
+        throw new Error(data?.error || 'No image URL returned from API');
       }
       
       setGeneratedImage(data.image);
@@ -53,10 +53,11 @@ export const useAiGenerator = () => {
       return data.image;
     } catch (error: any) {
       console.error(`Error generating ${type}:`, error);
+      const errorMessage = error.message || "Unknown error occurred";
       toast({
         variant: "destructive",
         title: `Error generating ${type}`,
-        description: error.message || "Unknown error occurred",
+        description: errorMessage,
       });
       return null;
     } finally {
