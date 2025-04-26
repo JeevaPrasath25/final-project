@@ -8,7 +8,7 @@ import { DesignImageUpload } from "./DesignImageUpload";
 import { DesignFormFields } from "./DesignFormFields";
 import { useDesignUpload } from "@/hooks/useDesignUpload";
 
-export const ArchitectUploadForm = () => {
+const ArchitectUploadForm = () => {
   const designImageRef = useRef<HTMLInputElement>(null);
   const {
     form,
@@ -73,3 +73,5 @@ export const ArchitectUploadForm = () => {
     </Card>
   );
 };
+
+export default ArchitectUploadForm;
