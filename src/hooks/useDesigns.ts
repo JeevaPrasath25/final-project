@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +18,8 @@ export interface Design {
   saved_by_user?: boolean;
   design_likes?: { count: number };
   design_saves?: { count: number };
+  tags?: string[];
+  description?: string;
 }
 
 export function useDesigns() {
@@ -33,7 +34,6 @@ export function useDesigns() {
     setIsLoading(true);
     setError(null);
     try {
-      // Get user data if available, but continue if not authenticated
       let userData = null;
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -42,7 +42,6 @@ export function useDesigns() {
         }
       } catch (authError) {
         console.log("Not authenticated or auth error:", authError);
-        // Continue without user data
       }
       
       const { data, error } = await supabase
@@ -65,7 +64,6 @@ export function useDesigns() {
       if (error) throw error;
       
       if (data) {
-        // Fetch likes and saves, but handle potential errors
         let likesData = [];
         let savesData = [];
         
@@ -126,7 +124,7 @@ export function useDesigns() {
               id: d.id,
               image_url: d.image_url,
               title: d.title,
-              style: d.design_type, // Use design_type as style
+              style: d.design_type,
               date: d.created_at,
               architect_name: d.user?.username || "Unknown Architect",
               architect_id: d.user?.id || "",
@@ -134,7 +132,9 @@ export function useDesigns() {
               liked_by_user: userLikes.includes(d.id),
               saved_by_user: userSaves.includes(d.id),
               design_likes: { count: designLikes?.count || 0 },
-              design_saves: { count: designSaves?.count || 0 }
+              design_saves: { count: designSaves?.count || 0 },
+              tags: d.tags,
+              description: d.description
             };
           })
         );
@@ -155,7 +155,6 @@ export function useDesigns() {
   useEffect(() => {
     fetchDesigns();
 
-    // Set up realtime subscription only if Supabase is available
     try {
       const channel = supabase
         .channel('posts_changes')
@@ -173,7 +172,6 @@ export function useDesigns() {
       };
     } catch (subscriptionError) {
       console.error("Error setting up realtime subscription:", subscriptionError);
-      // Continue without realtime updates
     }
   }, []);
 
@@ -243,7 +241,9 @@ export function useDesigns() {
           liked_by_user: false,
           saved_by_user: false,
           design_likes: { count: 0 },
-          design_saves: { count: 0 }
+          design_saves: { count: 0 },
+          tags: [],
+          description: ""
         };
         setDesigns(prev => [newDesign, ...prev]);
       }

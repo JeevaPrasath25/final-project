@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Sparkles, RefreshCcw, Download, LayoutPlanIcon } from "lucide-react";
+import { Sparkles, RefreshCcw, Download, LayoutPlan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,7 +30,6 @@ const AIGenerator = () => {
   const [generationType, setGenerationType] = useState<"house" | "floorplan">("house");
   const { toast } = useToast();
 
-  // Sample mock images to use while the edge function is being fixed
   const mockImages = {
     house: [
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
@@ -60,7 +58,6 @@ const AIGenerator = () => {
     setError(null);
 
     try {
-      // First try to use the edge function
       try {
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: JSON.stringify({ 
@@ -85,11 +82,8 @@ const AIGenerator = () => {
         // Silently fail and continue to fallback
       }
       
-      // Fallback to mock images if edge function fails
-      // Simulate AI generation delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Get a random image from our mock collection
       const mockCollection = mockImages[generationType];
       const randomIndex = Math.floor(Math.random() * mockCollection.length);
       const mockImage = mockCollection[randomIndex];
@@ -255,7 +249,7 @@ const AIGenerator = () => {
                     </>
                   ) : (
                     <>
-                      <LayoutPlanIcon className="h-4 w-4 mr-2" />
+                      <LayoutPlan className="h-4 w-4 mr-2" />
                       Generate Floor Plan
                     </>
                   )}
