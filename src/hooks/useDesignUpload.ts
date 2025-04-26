@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,21 +9,17 @@ import { DesignCategory, DesignType, DESIGN_TYPES } from "@/types/design";
 const designFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   category: z.enum(["floorplan", "inspiration"] as const),
-  metadata: z.object({
-    rooms: z.number().min(1).max(20).optional(),
-    squareFeet: z.number().min(100).max(20000).optional(),
-    designType: z.enum(DESIGN_TYPES as [DesignType, ...DesignType[]]).optional(),
-  })
-}).refine((data) => {
-  if (data.category === "floorplan") {
-    return data.metadata.rooms !== undefined && data.metadata.squareFeet !== undefined;
-  }
-  if (data.category === "inspiration") {
-    return data.metadata.designType !== undefined;
-  }
-  return true;
-}, {
-  message: "Please fill in all required fields for the selected category",
+  metadata: z.discriminatedUnion("category", [
+    z.object({
+      category: z.literal("floorplan"),
+      rooms: z.number().min(1).max(20),
+      squareFeet: z.number().min(100).max(20000),
+    }),
+    z.object({
+      category: z.literal("inspiration"),
+      designType: z.enum(DESIGN_TYPES as [DesignType, ...DesignType[]]),
+    }),
+  ]),
 });
 
 type DesignFormValues = z.infer<typeof designFormSchema>;
@@ -45,7 +40,10 @@ export const useDesignUpload = () => {
     defaultValues: {
       title: "",
       category: "inspiration",
-      metadata: {},
+      metadata: {
+        category: "inspiration",
+        designType: "modern",
+      },
     },
   });
 
@@ -84,11 +82,7 @@ export const useDesignUpload = () => {
         return;
       }
 
-      const success = await uploadDesign(values.title, imageUrl, values.category, {
-        rooms: values.rooms,
-        squareFeet: values.squareFeet,
-        designType: values.designType,
-      });
+      const success = await uploadDesign(values.title, imageUrl, values.category, values.metadata);
 
       if (success) {
         form.reset();

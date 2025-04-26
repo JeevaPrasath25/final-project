@@ -1,4 +1,3 @@
-
 export type DesignCategory = "floorplan" | "inspiration";
 export type DesignType = 
   | "modern"
@@ -21,11 +20,16 @@ export const DESIGN_TYPES: DesignType[] = [
   "farmhouse"
 ];
 
-export interface DesignMetadata {
-  rooms?: number;
-  squareFeet?: number;
-  designType?: DesignType;
+export interface FloorPlanMetadata {
+  rooms: number;
+  squareFeet: number;
 }
+
+export interface InspirationMetadata {
+  designType: DesignType;
+}
+
+export type DesignMetadata = FloorPlanMetadata | InspirationMetadata;
 
 export interface DesignFormData {
   title: string;
