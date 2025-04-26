@@ -25,6 +25,7 @@ import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import HomeownerDashboard from "./pages/HomeownerDashboard";
+import DesignUpload from "./pages/DesignUpload";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/architect-profile" element={<ArchitectProfilePage />} />
             <Route path="/my-profile" element={<MyProfile />} />
             <Route path="/homeowner-dashboard" element={<HomeownerDashboard />} />
+            <Route path="/design-upload" element={<DesignUpload />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
