@@ -14,8 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json()
+    const requestData = await req.json();
+    const { prompt, type = "house" } = requestData;
     
+    if (!prompt) {
+      return new Response(
+        JSON.stringify({ error: 'Missing prompt parameter' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
     // Get the Hugging Face access token from environment variables
     const huggingFaceToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
     
@@ -30,19 +38,28 @@ serve(async (req) => {
       )
     }
 
-    console.log('Making request to Hugging Face API with prompt:', prompt)
+    console.log(`Making request to Hugging Face API with ${type} prompt:`, prompt);
     const hf = new HfInference(huggingFaceToken)
+    
+    // Different model options based on type
+    const modelConfig = type === "floorplan" 
+      ? {
+          inputs: prompt,
+          model: 'black-forest-labs/FLUX.1-schnell',
+          parameters: { guidance_scale: 8.0 }
+        }
+      : {
+          inputs: prompt,
+          model: 'black-forest-labs/FLUX.1-schnell'
+        };
 
-    const image = await hf.textToImage({
-      inputs: prompt,
-      model: 'black-forest-labs/FLUX.1-schnell',
-    })
+    const image = await hf.textToImage(modelConfig);
 
     // Convert the blob to a base64 string
     const arrayBuffer = await image.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
 
-    console.log('Image generation successful')
+    console.log(`${type} image generation successful`);
     return new Response(
       JSON.stringify({ image: `data:image/png;base64,${base64}` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -28,12 +28,13 @@ export type ProjectFilters = {
   rooms: string;
   size: [number, number];
   sortBy: string;
-  type: "house" | "floorplan";
+  type: "house" | "floorplan" | "inspiration" | "all";
+  category: string;
 };
 
 interface ProjectFiltersProps {
   onFilterChange: (filters: ProjectFilters) => void;
-  type: "house" | "floorplan";
+  type: "house" | "floorplan" | "inspiration" | "all";
 }
 
 const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
@@ -43,7 +44,8 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
     rooms: "all",
     size: [0, 5000],
     sortBy: "newest",
-    type: type
+    type: type,
+    category: "all"
   });
   
   useEffect(() => {
@@ -61,14 +63,34 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
       rooms: "all",
       size: [0, 5000],
       sortBy: "newest",
-      type: type
+      type: type,
+      category: "all"
     };
     setFilters(defaultFilters);
   };
 
   const FiltersContent = () => (
     <div className="space-y-6">
-      {type === "house" ? (
+      <div>
+        <label className="text-sm font-medium block mb-2">
+          Category
+        </label>
+        <Select
+          value={filters.category}
+          onValueChange={(value) => handleFilterChange("category", value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="inspiration">Design Inspiration</SelectItem>
+            <SelectItem value="floorplan">Floor Plan</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {(filters.category === "inspiration" || filters.category === "all") && (
         <div>
           <label className="text-sm font-medium block mb-2">
             Architectural Style
@@ -93,7 +115,9 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
             </SelectContent>
           </Select>
         </div>
-      ) : (
+      )}
+
+      {(filters.category === "floorplan" || filters.category === "all") && (
         <>
           <div>
             <label className="text-sm font-medium block mb-2">Number of Rooms</label>

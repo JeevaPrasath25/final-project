@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAiGenerator } from "@/hooks/useAiGenerator";
 
 const samplePrompts = {
   house: [
@@ -23,99 +26,54 @@ const samplePrompts = {
 };
 
 const AIGenerator = () => {
-  const [prompt, setPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { 
+    aiPrompt, 
+    setAiPrompt, 
+    generatingImage, 
+    generatedImage, 
+    setGeneratedImage, 
+    generateDesignWithAI 
+  } = useAiGenerator();
   const [generationType, setGenerationType] = useState<"house" | "floorplan">("house");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const mockImages = {
-    house: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      "https://images.unsplash.com/photo-1613977257363-707ba9348227?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-    ],
-    floorplan: [
-      "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1784&q=80",
-      "https://images.unsplash.com/photo-1631870860332-34a0e858d24c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1784&q=80",
-      "https://plus.unsplash.com/premium_photo-1676440387576-cae97d8638b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1784&q=80"
-    ]
+  const handleSamplePrompt = (sample: string) => {
+    setAiPrompt(sample);
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
+    if (!aiPrompt) {
       toast({
-        title: "Empty prompt",
-        description: `Please enter a description of your dream ${generationType === "house" ? "home" : "floor plan"}.`,
-        variant: "destructive"
+        variant: "destructive",
+        title: "Prompt required",
+        description: "Please enter a prompt for the AI to generate a design",
       });
       return;
     }
 
-    setIsGenerating(true);
     setError(null);
-
-    try {
-      try {
-        const { data, error } = await supabase.functions.invoke('generate-image', {
-          body: JSON.stringify({ 
-            prompt: generationType === "floorplan" 
-              ? `Detailed architectural floor plan showing ${prompt}. Top-down view, clean lines, measurements, room labels.`
-              : prompt,
-            type: generationType
-          })
-        });
-
-        if (!error && data?.image) {
-          setGeneratedImages([data.image]);
-          toast({
-            title: generationType === "house" ? "Design generated" : "Floor plan generated",
-            description: generationType === "house" 
-              ? "Your dream home design has been created."
-              : "Your floor plan has been created.",
-          });
-          setIsGenerating(false);
-          return;
-        }
-      } catch (edgeFuncError) {
-        console.log("Edge function error, falling back to mock images", edgeFuncError);
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockCollection = mockImages[generationType];
-      const randomIndex = Math.floor(Math.random() * mockCollection.length);
-      const mockImage = mockCollection[randomIndex];
-      
-      setGeneratedImages([mockImage]);
-      toast({
-        title: generationType === "house" ? "Design generated" : "Floor plan generated",
-        description: generationType === "house" 
-          ? "Your dream home design has been created. (Using sample images while our AI system is being upgraded)"
-          : "Your floor plan has been created. (Using sample images while our AI system is being upgraded)",
-      });
-      
-    } catch (error: any) {
-      console.error('Error details:', error);
-      
-      const errorMessage = error.message || "Unable to generate image. Please try again.";
-      setError(errorMessage);
-      
-      toast({
-        title: "Generation Failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
+    const imageUrl = await generateDesignWithAI(generationType);
+    
+    if (!imageUrl) {
+      setError("Failed to generate image. Please try again.");
     }
   };
 
-  const handleSamplePrompt = (sample: string) => {
-    setPrompt(sample);
-  };
+  if (!user) {
+    return (
+      <div className="container mx-auto py-12">
+        <Card className="p-8 text-center">
+          <h2 className="text-2xl font-semibold mb-4">Authentication Required</h2>
+          <p className="mb-6">You need to log in to use the AI Generator feature.</p>
+          <Button asChild>
+            <a href="/login">Log In</a>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-12">
@@ -147,8 +105,8 @@ const AIGenerator = () => {
                 <Textarea
                   id="prompt-house"
                   placeholder="E.g., A two-story modern farmhouse with large windows, wood accents, and an open floor plan..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
                   className="min-h-[120px]"
                 />
               </div>
@@ -176,11 +134,11 @@ const AIGenerator = () => {
               )}
 
               <div className="flex justify-between">
-                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(prompt)}>
+                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(aiPrompt)}>
                   Copy
                 </Button>
-                <Button onClick={handleGenerate} disabled={isGenerating}>
-                  {isGenerating ? (
+                <Button onClick={handleGenerate} disabled={generatingImage}>
+                  {generatingImage ? (
                     <>
                       <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
                       Generating...
@@ -210,8 +168,8 @@ const AIGenerator = () => {
                 <Textarea
                   id="prompt-floorplan"
                   placeholder="E.g., A 3-bedroom house with open kitchen and living area, master suite with walk-in closet, home office, and 2-car garage..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
                   className="min-h-[120px]"
                 />
               </div>
@@ -239,11 +197,11 @@ const AIGenerator = () => {
               )}
 
               <div className="flex justify-between">
-                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(prompt)}>
+                <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(aiPrompt)}>
                   Copy
                 </Button>
-                <Button onClick={handleGenerate} disabled={isGenerating}>
-                  {isGenerating ? (
+                <Button onClick={handleGenerate} disabled={generatingImage}>
+                  {generatingImage ? (
                     <>
                       <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
                       Generating...
@@ -260,39 +218,46 @@ const AIGenerator = () => {
           </TabsContent>
         </Tabs>
 
-        {generatedImages.length > 0 && (
+        {generatingImage && (
+          <div className="my-8 flex flex-col items-center">
+            <div className="w-full max-w-md bg-gray-100 rounded-lg p-8 flex items-center justify-center">
+              <RefreshCcw className="h-12 w-12 text-gray-400 animate-spin" />
+            </div>
+            <p className="mt-4 text-muted-foreground">Generating your {generationType === "house" ? "design" : "floor plan"}...</p>
+          </div>
+        )}
+
+        {generatedImage && !generatingImage && (
           <div className="mt-10">
             <h2 className="text-2xl font-semibold mb-6 font-playfair">
-              {generationType === "house" ? "Your Generated Designs" : "Your Generated Floor Plans"}
+              {generationType === "house" ? "Your Generated Design" : "Your Generated Floor Plan"}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {generatedImages.map((image, index) => (
-                <div key={index} className="relative group">
-                  <img 
-                    src={image} 
-                    alt={generationType === "house" ? `Generated design ${index + 1}` : `Generated floor plan ${index + 1}`} 
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-white border-white hover:bg-white/20"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = image;
-                        link.download = generationType === "house" 
-                          ? `design_${index + 1}.png`
-                          : `floorplan_${index + 1}.png`;
-                        link.click();
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Save
-                    </Button>
-                  </div>
+            <div className="grid grid-cols-1 gap-6">
+              <div className="relative group">
+                <img 
+                  src={generatedImage} 
+                  alt={generationType === "house" ? "Generated design" : "Generated floor plan"} 
+                  className="w-full object-cover rounded-lg shadow-md"
+                />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-white border-white hover:bg-white/20"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = generatedImage;
+                      link.download = generationType === "house" 
+                        ? "design.png"
+                        : "floorplan.png";
+                      link.click();
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         )}

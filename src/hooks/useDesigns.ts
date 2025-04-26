@@ -20,6 +20,7 @@ export interface Design {
   design_saves?: { count: number };
   tags?: string[];
   description?: string;
+  category?: "floorplan" | "inspiration";
 }
 
 export function useDesigns() {
@@ -53,6 +54,8 @@ export function useDesigns() {
           design_type,
           created_at,
           user_id,
+          description,
+          tags,
           user:user_id (
             id,
             username,
@@ -120,6 +123,13 @@ export function useDesigns() {
             const designLikes = likesData?.find((l: any) => l.design_id === d.id);
             const designSaves = savesData?.find((s: any) => s.design_id === d.id);
             
+            const isFloorPlan = 
+              (d.tags && d.tags.some((tag: string) => 
+                tag.toLowerCase().includes('bedroom') || tag.toLowerCase().includes('room'))) ||
+              (d.description && d.description.toLowerCase().includes('floor plan'));
+              
+            const category = isFloorPlan ? 'floorplan' : 'inspiration';
+            
             return {
               id: d.id,
               image_url: d.image_url,
@@ -134,7 +144,8 @@ export function useDesigns() {
               design_likes: { count: designLikes?.count || 0 },
               design_saves: { count: designSaves?.count || 0 },
               tags: d.tags,
-              description: d.description
+              description: d.description,
+              category: category
             };
           })
         );
@@ -208,12 +219,35 @@ export function useDesigns() {
     }
   };
 
-  const uploadDesign = async (title: string, imageUrl: string): Promise<boolean> => {
+  const uploadDesign = async (title: string, imageUrl: string, category?: string, metadata?: any): Promise<boolean> => {
     try {
       setUploadingDesign(true);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in to upload designs");
+      
+      let tags: string[] = [];
+      let description = "";
+      let designType = null;
+      
+      if (category === "floorplan" && metadata) {
+        if (metadata.rooms) {
+          tags.push(`${metadata.rooms} bedroom`);
+        }
+        
+        if (metadata.squareFeet) {
+          tags.push(`${metadata.squareFeet} sq ft`);
+        }
+        
+        description = `${metadata.rooms || ""} bedroom floor plan, ${metadata.squareFeet || ""} sq ft`;
+      } else if (category === "inspiration" && metadata) {
+        if (metadata.designType) {
+          tags.push(metadata.designType);
+          designType = metadata.designType;
+        }
+        
+        description = `${metadata.designType || ""} design inspiration`;
+      }
       
       const { error, data } = await supabase
         .from('posts')
@@ -222,6 +256,9 @@ export function useDesigns() {
             title,
             image_url: imageUrl,
             user_id: user.id,
+            design_type: designType,
+            tags: tags,
+            description: description
           }
         ])
         .select()
@@ -242,8 +279,10 @@ export function useDesigns() {
           saved_by_user: false,
           design_likes: { count: 0 },
           design_saves: { count: 0 },
-          tags: [],
-          description: ""
+          tags: tags,
+          description: description,
+          style: designType,
+          category: category as "floorplan" | "inspiration"
         };
         setDesigns(prev => [newDesign, ...prev]);
       }

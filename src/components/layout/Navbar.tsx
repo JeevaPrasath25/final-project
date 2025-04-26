@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -26,6 +26,11 @@ const Navbar = () => {
   const isMobile = useIsMobile();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const { user } = useAuth();
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    return location.pathname === path ? "text-design-primary font-medium" : "text-foreground hover:text-design-primary";
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b py-3">
@@ -38,10 +43,15 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         {!isMobile && (
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/" className="text-foreground hover:text-design-primary transition-colors">Home</Link>
-            <Link to="/explore" className="text-foreground hover:text-design-primary transition-colors">Explore</Link>
-            <Link to="/architects" className="text-foreground hover:text-design-primary transition-colors">Architects</Link>
-            <Link to="/ai-generator" className="text-foreground hover:text-design-primary transition-colors">AI Generator</Link>
+            <Link to="/" className={`transition-colors ${isActive("/")}`}>Home</Link>
+            
+            {user && (
+              <>
+                <Link to="/explore" className={`transition-colors ${isActive("/explore")}`}>Explore</Link>
+                <Link to="/architects" className={`transition-colors ${isActive("/architects")}`}>Architects</Link>
+                <Link to="/ai-generator" className={`transition-colors ${isActive("/ai-generator")}`}>AI Generator</Link>
+              </>
+            )}
           </div>
         )}
 
@@ -103,18 +113,24 @@ const Navbar = () => {
                     <Home className="mr-2 h-5 w-5" />
                     Home
                   </Link>
-                  <Link to="/explore" className="flex items-center text-lg font-medium">
-                    <Grid className="mr-2 h-5 w-5" />
-                    Explore
-                  </Link>
-                  <Link to="/architects" className="flex items-center text-lg font-medium">
-                    <Users className="mr-2 h-5 w-5" />
-                    Architects
-                  </Link>
-                  <Link to="/ai-generator" className="flex items-center text-lg font-medium">
-                    <Sparkles className="mr-2 h-5 w-5" />
-                    AI Generator
-                  </Link>
+                  
+                  {user && (
+                    <>
+                      <Link to="/explore" className="flex items-center text-lg font-medium">
+                        <Grid className="mr-2 h-5 w-5" />
+                        Explore
+                      </Link>
+                      <Link to="/architects" className="flex items-center text-lg font-medium">
+                        <Users className="mr-2 h-5 w-5" />
+                        Architects
+                      </Link>
+                      <Link to="/ai-generator" className="flex items-center text-lg font-medium">
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        AI Generator
+                      </Link>
+                    </>
+                  )}
+                  
                   <div className="border-t pt-4 mt-4">
                     <div className="flex flex-col space-y-3">
                       {user ? (

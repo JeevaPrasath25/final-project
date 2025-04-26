@@ -1,3 +1,4 @@
+
 import { Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,17 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         `)
         .in('user_id', architectIds);
       
+      // Apply category filter if specified
+      if (filters?.category && filters.category !== "all") {
+        if (filters.category === "floorplan") {
+          // For floorplans, we look for tags that contain bedroom counts or room references
+          query = query.or('tags.cs.{%bedroom%}, tags.cs.{%room%}, description.ilike.%floor plan%');
+        } else if (filters.category === "inspiration") {
+          // For design inspiration, we exclude floor plans
+          query = query.not('tags', 'cs', '{%bedroom%}').not('tags', 'cs', '{%room%}').not('description', 'ilike', '%floor plan%');
+        }
+      }
+      
       if (filters?.sortBy === "newest") {
         query = query.order('created_at', { ascending: false });
       } else if (filters?.sortBy === "oldest") {
@@ -69,6 +81,12 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
       if (designsError) throw designsError;
 
+      if (!data || data.length === 0) {
+        setDesigns([]);
+        setIsLoading(false);
+        return;
+      }
+
       const formattedDesigns = data.map((design: any) => ({
         id: design.id,
         title: design.title,
@@ -76,7 +94,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         style: design.design_type,
         date: design.created_at,
         description: design.description,
-        tags: design.tags,
+        tags: design.tags || [],
         architect_name: design.user?.username || "Unknown Architect",
         architect_id: design.user?.id || "",
         user_id: design.user_id
@@ -93,7 +111,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   useEffect(() => {
     fetchArchitectDesigns();
-  }, [filters?.sortBy]);
+  }, [filters?.sortBy, filters?.category]);
 
   useEffect(() => {
     if (error && errorAttempts === 0) {
@@ -162,12 +180,15 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
     let filtered = [...designs];
     
     if (filters) {
+      // Design style filter (for inspiration category)
       if (filters.style && filters.style !== "all") {
         filtered = filtered.filter(design => 
-          design.style?.toLowerCase() === filters.style.toLowerCase()
+          design.style?.toLowerCase() === filters.style.toLowerCase() ||
+          design.tags?.some(tag => tag.toLowerCase() === filters.style.toLowerCase())
         );
       }
       
+      // Number of rooms filter (for floorplan category)
       if (filters.rooms && filters.rooms !== "all") {
         if (filters.rooms === "5+") {
           filtered = filtered.filter(design => {
@@ -203,6 +224,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         }
       }
       
+      // Size filter (for floorplan category)
       if (filters.size && (filters.size[0] > 0 || filters.size[1] < 5000)) {
         const [minSize, maxSize] = filters.size;
         
@@ -225,7 +247,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
             }
           }
           
-          return true;
+          return true; // Include if no size information found
         });
       }
     }
@@ -247,74 +269,86 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {filteredDesigns.map((design) => (
-        <Card key={design.id} className="overflow-hidden design-card border-none shadow-lg group">
-          <Link to={`/project/${design.id}`}>
-            <div className="h-64 overflow-hidden bg-gray-100">
-              <img 
-                src={design.image_url} 
-                alt={design.title} 
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
-              />
-            </div>
-          </Link>
+      {filteredDesigns.map((design) => {
+        const isFloorPlan = 
+          design.tags?.some(tag => tag.toLowerCase().includes('bedroom') || tag.toLowerCase().includes('room')) || 
+          design.description?.toLowerCase().includes('floor plan');
 
-          <div className="p-5">
-            <div className="flex justify-between items-start mb-3">
-              <h3 className="font-semibold text-xl font-playfair leading-tight">
-                <Link to={`/project/${design.id}`} className="hover:text-design-primary transition-colors">
-                  {design.title}
-                </Link>
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="ml-2"
-                onClick={() => handleLike(design.id)}
-              >
-                <Heart
-                  className={`h-5 w-5 ${likedDesigns.includes(design.id)
-                    ? "fill-design-primary text-design-primary"
-                    : "text-muted-foreground"
-                  }`}
+        return (
+          <Card key={design.id} className="overflow-hidden design-card border-none shadow-lg group">
+            <Link to={`/project/${design.id}`}>
+              <div className="h-64 overflow-hidden bg-gray-100">
+                <img 
+                  src={design.image_url} 
+                  alt={design.title} 
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
                 />
+              </div>
+            </Link>
+
+            <div className="p-5">
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-semibold text-xl font-playfair leading-tight">
+                  <Link to={`/project/${design.id}`} className="hover:text-design-primary transition-colors">
+                    {design.title}
+                  </Link>
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-2"
+                  onClick={() => handleLike(design.id)}
+                >
+                  <Heart
+                    className={`h-5 w-5 ${likedDesigns.includes(design.id)
+                      ? "fill-design-primary text-design-primary"
+                      : "text-muted-foreground"
+                    }`}
+                  />
+                </Button>
+              </div>
+              
+              {design.architect_name && (
+                <Link 
+                  to={`/architect/${design.architect_id}`} 
+                  className="text-sm font-medium text-design-primary hover:underline block mb-3"
+                >
+                  by {design.architect_name}
+                </Link>
+              )}
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge variant="outline" className="text-xs">
+                  {isFloorPlan ? 'Floor Plan' : 'Design Inspiration'}
+                </Badge>
+
+                {design.style && (
+                  <Badge variant="outline" className="text-xs">{design.style}</Badge>
+                )}
+
+                {design.date && (
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(design.date).toLocaleDateString()}
+                  </span>
+                )}
+
+                {design.tags && design.tags.length > 0 && (
+                  design.tags.slice(0, 2).map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
+                  ))
+                )}
+              </div>
+
+              <Button variant="ghost" size="sm" className="text-design-primary w-full" asChild>
+                <Link to={`/project/${design.id}`} className="flex items-center justify-center">
+                  View Details
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
               </Button>
             </div>
-            
-            {design.architect_name && (
-              <Link 
-                to={`/architect/${design.architect_id}`} 
-                className="text-sm font-medium text-design-primary hover:underline block mb-3"
-              >
-                by {design.architect_name}
-              </Link>
-            )}
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {design.style && (
-                <Badge variant="outline" className="text-xs">{design.style}</Badge>
-              )}
-              {design.date && (
-                <span className="text-xs text-muted-foreground">
-                  {new Date(design.date).toLocaleDateString()}
-                </span>
-              )}
-              {design.tags && design.tags.length > 0 && (
-                design.tags.slice(0, 2).map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
-                ))
-              )}
-            </div>
-
-            <Button variant="ghost" size="sm" className="text-design-primary w-full" asChild>
-              <Link to={`/project/${design.id}`} className="flex items-center justify-center">
-                View Details
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 };

@@ -8,7 +8,7 @@ export const useAiGenerator = () => {
   const [generatingImage, setGeneratingImage] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
-  const generateDesignWithAI = async () => {
+  const generateDesignWithAI = async (type: "house" | "floorplan" = "house") => {
     if (!aiPrompt) {
       toast({
         variant: "destructive",
@@ -20,14 +20,21 @@ export const useAiGenerator = () => {
 
     setGeneratingImage(true);
     try {
-      console.log("Sending request to generate image with prompt:", aiPrompt);
+      console.log(`Sending request to generate ${type} with prompt:`, aiPrompt);
       
+      const finalPrompt = type === "floorplan" 
+        ? `Detailed architectural floor plan showing ${aiPrompt}. Top-down view, clean lines, measurements, room labels.`
+        : aiPrompt;
+        
       const response = await fetch('https://olwapbbjgyahmtpgbrgt.supabase.co/functions/v1/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: aiPrompt }),
+        body: JSON.stringify({ 
+          prompt: finalPrompt,
+          type: type 
+        }),
       });
 
       if (!response.ok) {
@@ -41,20 +48,22 @@ export const useAiGenerator = () => {
         throw new Error('No image returned from API');
       }
       
-      console.log("Image generated successfully");
+      console.log(`${type} generated successfully`);
       setGeneratedImage(data.image);
       
       toast({
-        title: "Image generated",
-        description: "AI has generated your design successfully",
+        title: type === "house" ? "Design generated" : "Floor plan generated",
+        description: type === "house" 
+          ? "AI has generated your design successfully" 
+          : "AI has generated your floor plan successfully",
       });
       
       return data.image;
     } catch (error: any) {
-      console.error("Error generating image:", error);
+      console.error(`Error generating ${type}:`, error);
       toast({
         variant: "destructive",
-        title: "Error generating image",
+        title: `Error generating ${type}`,
         description: error.message || "Unknown error occurred",
       });
       return null;
