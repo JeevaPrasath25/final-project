@@ -24,14 +24,23 @@ export function useMessages(otherUserId: string) {
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
+        // Properly format the query to get messages between the current user and the architect
         const { data, error } = await supabase
           .from('messages')
           .select('*')
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .or(`sender_id.eq.${otherUserId},receiver_id.eq.${otherUserId}`)
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-        setMessages(data || []);
+        
+        // Filter to only include messages between these two users
+        const filteredMessages = data?.filter(msg => 
+          (msg.sender_id === user.id && msg.receiver_id === otherUserId) || 
+          (msg.sender_id === otherUserId && msg.receiver_id === user.id)
+        ) || [];
+        
+        setMessages(filteredMessages);
       } catch (err) {
         console.error('Error fetching messages:', err);
         setError(err as Error);
@@ -42,19 +51,23 @@ export function useMessages(otherUserId: string) {
 
     fetchMessages();
 
-    // Subscribe to new messages
+    // Subscribe to new messages using Supabase realtime
     const channel = supabase
-      .channel('messages')
+      .channel('messages_channel')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `sender_id=eq.${user.id},receiver_id=eq.${otherUserId}`
         },
         (payload) => {
-          setMessages(current => [...current, payload.new as Message]);
+          const newMessage = payload.new as Message;
+          // Only add the message if it's relevant to this conversation
+          if ((newMessage.sender_id === user.id && newMessage.receiver_id === otherUserId) ||
+              (newMessage.sender_id === otherUserId && newMessage.receiver_id === user.id)) {
+            setMessages(current => [...current, newMessage]);
+          }
         }
       )
       .subscribe();

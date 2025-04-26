@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,16 @@ export function ChatDialog({ isOpen, onClose, architect }: ChatDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { messages, isLoading, error, sendMessage } = useMessages(architect.id);
+
+  // Automatically scroll to the bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const messageContainer = document.getElementById("message-container");
+      if (messageContainer) {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      }
+    }
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +70,7 @@ export function ChatDialog({ isOpen, onClose, architect }: ChatDialogProps) {
         </DialogHeader>
         
         <div className="flex flex-col h-[400px]">
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4" id="message-container">
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
