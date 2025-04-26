@@ -43,8 +43,11 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('OpenAI API error:', data.error);
       throw new Error(data.error?.message || 'Failed to generate image');
     }
+
+    console.log('OpenAI API response:', data);
 
     return new Response(
       JSON.stringify({

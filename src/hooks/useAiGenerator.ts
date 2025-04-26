@@ -30,7 +30,12 @@ export const useAiGenerator = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('Response from generate-image function:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
       
       if (!data?.image) {
         throw new Error('No image URL returned from API');
