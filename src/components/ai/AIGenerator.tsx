@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Sparkles, RefreshCcw, Download, LayoutPlan } from "lucide-react";
+import { Sparkles, RefreshCcw, Download, LayoutTemplate } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -249,7 +249,7 @@ const AIGenerator = () => {
                     </>
                   ) : (
                     <>
-                      <LayoutPlan className="h-4 w-4 mr-2" />
+                      <LayoutTemplate className="h-4 w-4 mr-2" />
                       Generate Floor Plan
                     </>
                   )}
