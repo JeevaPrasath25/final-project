@@ -4,11 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sparkles, RefreshCcw, Download, LayoutTemplate } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAiGenerator } from "@/hooks/useAiGenerator";
 
@@ -36,7 +34,6 @@ const AIGenerator = () => {
   } = useAiGenerator();
   const [generationType, setGenerationType] = useState<"house" | "floorplan">("house");
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const handleSamplePrompt = (sample: string) => {
@@ -54,10 +51,11 @@ const AIGenerator = () => {
     }
 
     setError(null);
-    const imageUrl = await generateDesignWithAI(generationType);
-    
-    if (!imageUrl) {
+    try {
+      await generateDesignWithAI(generationType);
+    } catch (error) {
       setError("Failed to generate image. Please try again.");
+      console.error("Error in handleGenerate:", error);
     }
   };
 
@@ -94,8 +92,8 @@ const AIGenerator = () => {
           <TabsContent value="house">
             <Card className="p-6 mb-8">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
-                <p className="font-medium">AI System Upgrade Notice</p>
-                <p>Our AI image generation system is currently being upgraded. You may see sample images while this process is completed. Thank you for your patience!</p>
+                <p className="font-medium">AI System Notice</p>
+                <p>Our AI generation system is currently showing sample images. Full AI generation will be available soon. Thank you for your patience!</p>
               </div>
               
               <div className="mb-4">
@@ -158,7 +156,7 @@ const AIGenerator = () => {
             <Card className="p-6 mb-8">
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
                 <p className="font-medium">AI Floor Plan Generator</p>
-                <p>Describe your ideal floor plan, including the number of rooms, layout preferences, and any special features.</p>
+                <p>Our AI generation system is currently showing sample floor plans. Full AI generation will be available soon.</p>
               </div>
               
               <div className="mb-4">
