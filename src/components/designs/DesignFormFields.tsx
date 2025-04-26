@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,8 +16,6 @@ export const DesignFormFields = ({
   designTitle,
   setDesignTitle,
 }: DesignFormFieldsProps) => {
-  const [category, setCategory] = useState<DesignCategory>("inspiration");
-
   return (
     <div className="space-y-6">
       <FormField
@@ -29,7 +26,6 @@ export const DesignFormFields = ({
             <FormLabel>Design Title</FormLabel>
             <FormControl>
               <Input 
-                {...field} 
                 placeholder="Enter a title for your design" 
                 value={designTitle}
                 onChange={(e) => {
@@ -50,15 +46,23 @@ export const DesignFormFields = ({
           <FormItem>
             <FormLabel>Category</FormLabel>
             <Select
-              value={field.value}
               onValueChange={(value: DesignCategory) => {
-                setCategory(value);
                 field.onChange(value);
                 // Reset metadata when category changes
-                form.setValue("metadata.rooms", undefined);
-                form.setValue("metadata.squareFeet", undefined);
-                form.setValue("metadata.designType", undefined);
+                if (value === "floorplan") {
+                  form.setValue("metadata", {
+                    category: "floorplan",
+                    rooms: undefined,
+                    squareFeet: undefined
+                  });
+                } else {
+                  form.setValue("metadata", {
+                    category: "inspiration",
+                    designType: undefined
+                  });
+                }
               }}
+              value={field.value}
             >
               <FormControl>
                 <SelectTrigger>
@@ -75,7 +79,7 @@ export const DesignFormFields = ({
         )}
       />
 
-      {category === "floorplan" ? (
+      {form.watch("category") === "floorplan" ? (
         <>
           <FormField
             control={form.control}
@@ -90,7 +94,7 @@ export const DesignFormFields = ({
                     max={20}
                     placeholder="Enter number of rooms"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -111,7 +115,7 @@ export const DesignFormFields = ({
                     max={20000}
                     placeholder="Enter square footage"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -119,7 +123,7 @@ export const DesignFormFields = ({
             )}
           />
         </>
-      ) : (
+      ) : form.watch("category") === "inspiration" && (
         <FormField
           control={form.control}
           name="metadata.designType"
@@ -127,8 +131,8 @@ export const DesignFormFields = ({
             <FormItem>
               <FormLabel>Design Type</FormLabel>
               <Select
-                value={field.value}
                 onValueChange={field.onChange}
+                value={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
