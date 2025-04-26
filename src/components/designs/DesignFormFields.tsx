@@ -1,8 +1,10 @@
 
+import { useState } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UseFormReturn } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
+import { DesignCategory, DesignType, DESIGN_TYPES } from "@/types/design";
 
 interface DesignFormFieldsProps {
   form: UseFormReturn<any>;
@@ -15,10 +17,10 @@ export const DesignFormFields = ({
   designTitle,
   setDesignTitle,
 }: DesignFormFieldsProps) => {
-  const category = form.watch("category");
+  const [category, setCategory] = useState<DesignCategory>("inspiration");
 
   return (
-    <>
+    <div className="space-y-6">
       <FormField
         control={form.control}
         name="title"
@@ -48,8 +50,15 @@ export const DesignFormFields = ({
           <FormItem>
             <FormLabel>Category</FormLabel>
             <Select
-              onValueChange={field.onChange}
-              defaultValue={field.value}
+              value={field.value}
+              onValueChange={(value: DesignCategory) => {
+                setCategory(value);
+                field.onChange(value);
+                // Reset metadata when category changes
+                form.setValue("metadata.rooms", undefined);
+                form.setValue("metadata.squareFeet", undefined);
+                form.setValue("metadata.designType", undefined);
+              }}
             >
               <FormControl>
                 <SelectTrigger>
@@ -66,55 +75,60 @@ export const DesignFormFields = ({
         )}
       />
 
-      {category === "floorplan" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {category === "floorplan" ? (
+        <>
           <FormField
             control={form.control}
-            name="rooms"
+            name="metadata.rooms"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Number of Rooms</FormLabel>
                 <FormControl>
                   <Input 
                     type="number"
+                    min={1}
+                    max={20}
+                    placeholder="Enter number of rooms"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : "")}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
-            name="squareFeet"
+            name="metadata.squareFeet"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Square Feet</FormLabel>
                 <FormControl>
                   <Input 
                     type="number"
+                    min={100}
+                    max={20000}
+                    placeholder="Enter square footage"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : "")}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-      )}
-
-      {category === "inspiration" && (
+        </>
+      ) : (
         <FormField
           control={form.control}
-          name="designType"
+          name="metadata.designType"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Design Type</FormLabel>
               <Select
+                value={field.value}
                 onValueChange={field.onChange}
-                defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -122,12 +136,11 @@ export const DesignFormFields = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="modern">Modern</SelectItem>
-                  <SelectItem value="traditional">Traditional</SelectItem>
-                  <SelectItem value="minimalist">Minimalist</SelectItem>
-                  <SelectItem value="industrial">Industrial</SelectItem>
-                  <SelectItem value="scandinavian">Scandinavian</SelectItem>
-                  <SelectItem value="farmhouse">Farmhouse</SelectItem>
+                  {DESIGN_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -135,6 +148,6 @@ export const DesignFormFields = ({
           )}
         />
       )}
-    </>
+    </div>
   );
 };

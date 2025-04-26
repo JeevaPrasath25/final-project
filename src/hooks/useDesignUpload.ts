@@ -5,13 +5,26 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useDesigns } from "@/hooks/useDesigns";
+import { DesignCategory, DesignType, DESIGN_TYPES } from "@/types/design";
 
 const designFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  category: z.enum(["floorplan", "inspiration"]),
-  rooms: z.number().min(1).max(20).optional(),
-  squareFeet: z.number().min(100).max(20000).optional(),
-  designType: z.string().optional(),
+  category: z.enum(["floorplan", "inspiration"] as const),
+  metadata: z.object({
+    rooms: z.number().min(1).max(20).optional(),
+    squareFeet: z.number().min(100).max(20000).optional(),
+    designType: z.enum(DESIGN_TYPES as [DesignType, ...DesignType[]]).optional(),
+  })
+}).refine((data) => {
+  if (data.category === "floorplan") {
+    return data.metadata.rooms !== undefined && data.metadata.squareFeet !== undefined;
+  }
+  if (data.category === "inspiration") {
+    return data.metadata.designType !== undefined;
+  }
+  return true;
+}, {
+  message: "Please fill in all required fields for the selected category",
 });
 
 type DesignFormValues = z.infer<typeof designFormSchema>;
@@ -32,6 +45,7 @@ export const useDesignUpload = () => {
     defaultValues: {
       title: "",
       category: "inspiration",
+      metadata: {},
     },
   });
 
