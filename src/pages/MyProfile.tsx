@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ArchitectDesigns from "@/components/architect/ArchitectDesigns";
 import ArchitectInfo from "@/components/architect/ArchitectInfo";
 import { useProfile } from "@/hooks/useProfile";
+import { useDesigns } from "@/hooks/useDesigns";
 
 const MyProfile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -22,9 +24,22 @@ const MyProfile = () => {
     profileImage,
     setProfileImage,
     updateProfile,
-    uploadingProfileImage
+    uploadingProfileImage,
+    setProfileData
   } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
+  
+  const { 
+    designs, 
+    designImage, 
+    uploadingDesign, 
+    setDesignImage, 
+    uploadDesign, 
+    uploadDesignImage, 
+    toggleLikeDesign, 
+    toggleSaveDesign, 
+    deleteDesign 
+  } = useDesigns();
 
   useEffect(() => {
     // Only redirect if not authenticated after auth has finished loading
@@ -71,7 +86,7 @@ const MyProfile = () => {
                 <div>
                   <form onSubmit={(e) => {
                     e.preventDefault();
-                    updateProfile();
+                    updateProfile(profileData);
                     setIsEditing(false);
                   }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -86,7 +101,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, username: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -113,7 +128,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, skills: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -129,7 +144,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, experience: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -145,7 +160,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, education: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -161,7 +176,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, social_links: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -177,7 +192,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, contact_details: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -193,7 +208,7 @@ const MyProfile = () => {
                           onChange={(e) => {
                             if (profileData) {
                               const updatedData = { ...profileData, contact_email: e.target.value };
-                              useProfile().setProfileData(updatedData);
+                              setProfileData(updatedData);
                             }
                           }}
                         />
@@ -209,7 +224,7 @@ const MyProfile = () => {
                         onChange={(e) => {
                           if (profileData) {
                             const updatedData = { ...profileData, bio: e.target.value };
-                            useProfile().setProfileData(updatedData);
+                            setProfileData(updatedData);
                           }
                         }}
                       />
@@ -235,7 +250,17 @@ const MyProfile = () => {
 
           <div className="bg-white rounded-lg shadow p-8">
             <h2 className="text-2xl font-bold mb-6">My Designs</h2>
-            <ArchitectDesigns userId={user.id} />
+            <ArchitectDesigns
+              designs={designs}
+              designImage={designImage}
+              uploadingDesign={uploadingDesign}
+              setDesignImage={setDesignImage}
+              uploadDesign={uploadDesign}
+              uploadDesignImage={uploadDesignImage}
+              toggleLikeDesign={toggleLikeDesign}
+              toggleSaveDesign={toggleSaveDesign}
+              deleteDesign={deleteDesign}
+            />
           </div>
         </div>
       </main>
