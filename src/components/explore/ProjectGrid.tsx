@@ -1,4 +1,3 @@
-
 import { Design } from "@/hooks/useDesigns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +39,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
       const architectIds = users.map(user => user.id);
       
-      const { data, error: designsError } = await supabase
+      let query = supabase
         .from('posts')
         .select(`
           id,
@@ -48,14 +47,25 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
           image_url,
           design_type,
           created_at,
+          description,
+          tags,
           user_id,
           user:user_id (
             username,
             role
           )
         `)
-        .in('user_id', architectIds)
-        .order('created_at', { ascending: false });
+        .in('user_id', architectIds);
+      
+      if (filters?.sortBy === "newest") {
+        query = query.order('created_at', { ascending: false });
+      } else if (filters?.sortBy === "oldest") {
+        query = query.order('created_at', { ascending: true });
+      } else if (filters?.sortBy === "popular") {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error: designsError } = await query;
 
       if (designsError) throw designsError;
 
@@ -65,8 +75,10 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         image_url: design.image_url,
         style: design.design_type,
         date: design.created_at,
+        description: design.description,
+        tags: design.tags,
         architect_name: design.user?.username || "Unknown Architect",
-        architect_id: design.user_id,
+        architect_id: design.user?.id || "",
         user_id: design.user_id
       }));
 
@@ -81,7 +93,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
   useEffect(() => {
     fetchArchitectDesigns();
-  }, []);
+  }, [filters?.sortBy]);
 
   useEffect(() => {
     if (error && errorAttempts === 0) {
@@ -146,30 +158,81 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
     );
   }
 
-  // Apply filters to create a filtered copy of designs
   const applyFilters = () => {
     let filtered = [...designs];
     
     if (filters) {
       if (filters.style && filters.style !== "all") {
-        filtered = filtered.filter(design => design.style === filters.style);
+        filtered = filtered.filter(design => 
+          design.style?.toLowerCase() === filters.style.toLowerCase()
+        );
       }
       
-      if (filters.sortBy === "newest") {
-        filtered = filtered.sort((a, b) => 
-          new Date(b.date || "").getTime() - new Date(a.date || "").getTime()
-        );
-      } else if (filters.sortBy === "oldest") {
-        filtered = filtered.sort((a, b) => 
-          new Date(a.date || "").getTime() - new Date(b.date || "").getTime()
-        );
+      if (filters.rooms && filters.rooms !== "all") {
+        if (filters.rooms === "5+") {
+          filtered = filtered.filter(design => {
+            const roomIndicators = design.tags?.some(tag => {
+              const roomCount = parseInt(tag.match(/(\d+)/)?.[1] || '0');
+              return roomCount >= 5;
+            });
+            
+            const descriptionIndicator = design.description?.toLowerCase().includes('5 bedroom') ||
+              design.description?.toLowerCase().includes('5-bedroom') ||
+              design.description?.toLowerCase().includes('6 bedroom') ||
+              design.description?.toLowerCase().includes('6-bedroom');
+            
+            return roomIndicators || descriptionIndicator;
+          });
+        } else {
+          const roomCount = filters.rooms;
+          filtered = filtered.filter(design => {
+            const hasRoomTag = design.tags?.some(tag => 
+              tag.toLowerCase().includes(`${roomCount} bedroom`) || 
+              tag.toLowerCase().includes(`${roomCount}-bedroom`) ||
+              tag.toLowerCase().includes(`${roomCount} room`) ||
+              tag.toLowerCase().includes(`${roomCount}-room`)
+            );
+            
+            const mentionsInDescription = design.description?.toLowerCase().includes(`${roomCount} bedroom`) ||
+              design.description?.toLowerCase().includes(`${roomCount}-bedroom`) ||
+              design.description?.toLowerCase().includes(`${roomCount} room`) ||
+              design.description?.toLowerCase().includes(`${roomCount}-room`);
+            
+            return hasRoomTag || mentionsInDescription;
+          });
+        }
+      }
+      
+      if (filters.size && (filters.size[0] > 0 || filters.size[1] < 5000)) {
+        const [minSize, maxSize] = filters.size;
+        
+        filtered = filtered.filter(design => {
+          if (design.tags) {
+            for (const tag of design.tags) {
+              const sizeMatch = tag.match(/(\d+)\s*sq\s*ft/i);
+              if (sizeMatch) {
+                const size = parseInt(sizeMatch[1]);
+                return size >= minSize && size <= maxSize;
+              }
+            }
+          }
+          
+          if (design.description) {
+            const sizeMatch = design.description.match(/(\d+)\s*sq\s*ft/i);
+            if (sizeMatch) {
+              const size = parseInt(sizeMatch[1]);
+              return size >= minSize && size <= maxSize;
+            }
+          }
+          
+          return true;
+        });
       }
     }
     
     return filtered;
   };
   
-  // Get the filtered designs
   const filteredDesigns = applyFilters();
 
   if (!filteredDesigns.length) {
@@ -177,6 +240,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
       <div className="bg-white rounded-lg shadow-sm p-12 text-center">
         <h3 className="text-xl font-medium mb-2">No architect designs found</h3>
         <p className="text-muted-foreground mb-6">No designs match your current filters or no architects have shared designs yet.</p>
+        <Button onClick={() => window.location.reload()}>Reset Filters</Button>
       </div>
     );
   }
@@ -234,6 +298,11 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
                 <span className="text-xs text-muted-foreground">
                   {new Date(design.date).toLocaleDateString()}
                 </span>
+              )}
+              {design.tags && design.tags.length > 0 && (
+                design.tags.slice(0, 2).map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
+                ))
               )}
             </div>
 

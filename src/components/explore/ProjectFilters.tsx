@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,11 +42,15 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
     size: [0, 5000],
     sortBy: "newest",
   });
+  
+  // Apply filter changes immediately
+  useEffect(() => {
+    onFilterChange(filters);
+  }, [filters, onFilterChange]);
 
   const handleFilterChange = (key: keyof ProjectFilters, value: any) => {
     const updatedFilters = { ...filters, [key]: value };
     setFilters(updatedFilters);
-    onFilterChange(updatedFilters);
   };
 
   const resetFilters = () => {
@@ -57,7 +61,6 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
       sortBy: "newest",
     };
     setFilters(defaultFilters);
-    onFilterChange(defaultFilters);
   };
 
   const FiltersContent = () => (
@@ -143,9 +146,8 @@ const ProjectFilters = ({ onFilterChange }: ProjectFiltersProps) => {
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="newest">Newest</SelectItem>
+        <SelectItem value="oldest">Oldest</SelectItem>
         <SelectItem value="popular">Most Popular</SelectItem>
-        <SelectItem value="budget_low">Budget: Low to High</SelectItem>
-        <SelectItem value="budget_high">Budget: High to Low</SelectItem>
       </SelectContent>
     </Select>
   );
