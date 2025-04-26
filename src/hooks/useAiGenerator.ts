@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAiGenerator = () => {
   const { toast } = useToast();
@@ -26,10 +27,15 @@ export const useAiGenerator = () => {
         ? `Detailed architectural floor plan showing ${aiPrompt}. Top-down view, clean lines, measurements, room labels.`
         : aiPrompt;
         
+      // Get the current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeader = session ? { Authorization: `Bearer ${session.access_token}` } : {};
+      
       const response = await fetch('https://olwapbbjgyahmtpgbrgt.supabase.co/functions/v1/generate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...authHeader
         },
         body: JSON.stringify({ 
           prompt: finalPrompt,
