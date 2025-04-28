@@ -63,13 +63,13 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
       
       // Apply category filter if specified
       if (filters?.category && filters.category !== "all") {
-        query = query.eq('metadata.category', filters.category);
+        query = query.eq('metadata->>category', filters.category);
       }
       
       // Apply design style filter for inspirations
       if (filters?.style && filters.style !== "all") {
         if (filters.category === "inspiration" || filters.category === "all") {
-          query = query.eq('metadata.designType', filters.style);
+          query = query.eq('metadata->>designType', filters.style);
         }
       }
       
@@ -78,16 +78,18 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         const roomValue = filters.rooms === "5+" ? 5 : parseInt(filters.rooms);
         
         if (filters.rooms === "5+") {
-          query = query.gte('metadata.rooms', roomValue);
+          query = query.gte('metadata->>rooms', roomValue.toString());
         } else {
-          query = query.eq('metadata.rooms', roomValue);
+          query = query.eq('metadata->>rooms', roomValue.toString());
         }
       }
       
       // Apply size filter for floorplans
       if (filters?.size && (filters.size[0] > 0 || filters.size[1] < 5000)) {
         const [minSize, maxSize] = filters.size;
-        query = query.gte('metadata.squareFeet', minSize).lte('metadata.squareFeet', maxSize);
+        query = query
+          .gte('metadata->>squareFeet', minSize.toString())
+          .lte('metadata->>squareFeet', maxSize.toString());
       }
       
       // Apply sorting
@@ -269,29 +271,29 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
 
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge variant="outline" className="text-xs">
-                {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
+                {design.metadata?.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
               </Badge>
 
               {/* Display appropriate information based on design category */}
-              {design.category === 'floorplan' && (
+              {design.metadata?.category === 'floorplan' && (
                 <>
-                  {design.rooms && (
+                  {design.metadata?.rooms && (
                     <Badge variant="secondary" className="text-xs">
-                      {design.rooms} {parseInt(design.rooms as string) === 1 ? 'Room' : 'Rooms'}
+                      {design.metadata.rooms} {parseInt(design.metadata.rooms as unknown as string) === 1 ? 'Room' : 'Rooms'}
                     </Badge>
                   )}
                   
-                  {design.size && (
+                  {design.metadata?.squareFeet && (
                     <Badge variant="secondary" className="text-xs">
-                      {design.size} sq ft
+                      {design.metadata.squareFeet} sq ft
                     </Badge>
                   )}
                 </>
               )}
 
-              {design.category === 'inspiration' && design.style && (
+              {design.metadata?.category === 'inspiration' && design.metadata?.designType && (
                 <Badge variant="secondary" className="text-xs">
-                  {design.style.charAt(0).toUpperCase() + design.style.slice(1)} Style
+                  {design.metadata.designType.charAt(0).toUpperCase() + design.metadata.designType.slice(1)} Style
                 </Badge>
               )}
 

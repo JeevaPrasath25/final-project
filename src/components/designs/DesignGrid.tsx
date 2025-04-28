@@ -1,5 +1,5 @@
 
-import { ImageIcon, Trash2 } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DesignCard from "./DesignCard";
 import { Design } from "@/hooks/useDesigns";
@@ -10,6 +10,8 @@ interface DesignGridProps {
   onSave: (id: string, saved: boolean) => void;
   onUploadClick: () => void;
   onDeleteDesign?: (id: string) => void;
+  onUpdateDesign?: (id: string, updates: Partial<Design>) => Promise<boolean>;
+  showDetails?: boolean;
 }
 
 const DesignGrid = ({ 
@@ -17,7 +19,9 @@ const DesignGrid = ({
   onLike, 
   onSave, 
   onUploadClick, 
-  onDeleteDesign 
+  onDeleteDesign,
+  onUpdateDesign,
+  showDetails = true
 }: DesignGridProps) => {
   if (designs.length === 0) {
     return (
@@ -43,6 +47,8 @@ const DesignGrid = ({
           onLike={onLike}
           onSave={onSave}
           onDelete={onDeleteDesign}
+          onUpdate={onUpdateDesign}
+          showDetails={showDetails}
         />
       ))}
     </div>

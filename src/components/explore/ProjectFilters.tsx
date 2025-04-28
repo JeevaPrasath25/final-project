@@ -64,6 +64,18 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
 
   const handleFilterChange = (key: keyof ProjectFilters, value: any) => {
     const updatedFilters = { ...filters, [key]: value };
+    
+    // If we change the category from floorplan to inspiration or vice versa, 
+    // we should reset the related filters
+    if (key === "category") {
+      if (value === "floorplan") {
+        updatedFilters.style = "all"; // Reset style when switching to floorplan
+      } else if (value === "inspiration") {
+        updatedFilters.rooms = "all"; // Reset rooms when switching to inspiration
+        updatedFilters.size = [0, 5000]; // Reset size when switching to inspiration
+      }
+    }
+    
     setFilters(updatedFilters);
   };
 
@@ -74,7 +86,7 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
       size: [0, 5000],
       sortBy: "newest",
       type: type,
-      category: filters.category
+      category: "all"
     };
     setFilters(defaultFilters);
   };

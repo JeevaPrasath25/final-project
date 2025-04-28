@@ -1,41 +1,25 @@
 
-export type DesignCategory = "floorplan" | "inspiration";
-export type DesignType = 
-  | "modern"
-  | "minimalist"
-  | "contemporary"
-  | "traditional"
-  | "industrial"
-  | "mediterranean"
-  | "scandinavian"
-  | "farmhouse";
-
-export const DESIGN_TYPES: DesignType[] = [
+export const DESIGN_TYPES = [
   "modern",
-  "minimalist",
-  "contemporary",
   "traditional",
+  "contemporary",
+  "minimalist",
   "industrial",
-  "mediterranean",
   "scandinavian",
-  "farmhouse"
+  "coastal",
+  "farmhouse",
+  "mediterranean",
+  "mid-century"
 ];
 
-export interface FloorPlanMetadata {
-  category: "floorplan";
-  rooms: number;
-  squareFeet: number;
-}
-
-export interface InspirationMetadata {
-  category: "inspiration";
-  designType: DesignType;
-}
-
-export type DesignMetadata = FloorPlanMetadata | InspirationMetadata;
+export type DesignCategory = "floorplan" | "inspiration";
 
 export interface DesignFormData {
   title: string;
   category: DesignCategory;
-  metadata: DesignMetadata;
+  metadata?: {
+    rooms?: number;
+    squareFeet?: number;
+    designType?: string;
+  };
 }

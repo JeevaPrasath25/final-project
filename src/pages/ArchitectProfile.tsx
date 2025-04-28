@@ -1,196 +1,406 @@
 
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import Navbar from "@/components/layout/Navbar";
+import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import ArchitectInfo from "@/components/architect/ArchitectInfo";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
-import { ChatDialog } from "@/components/chat/ChatDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Edit, Save, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import ArchitectInfo from "@/components/architect/ArchitectInfo";
+import ArchitectDesigns from "@/components/architect/ArchitectDesigns";
+import { useToast } from "@/hooks/use-toast";
+import { useDesigns } from "@/hooks/useDesigns";
+import { useDesignUpload } from "@/hooks/useDesignUpload";
 
 const ArchitectProfile = () => {
-  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
-  const [designs, setDesigns] = useState<any[]>([]);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  
+  const { designs, toggleLikeDesign, toggleSaveDesign, deleteDesign, updateDesign } = useDesigns(user?.id);
+  const { 
+    designImage, 
+    setDesignImage, 
+    uploadingDesign, 
+    uploadDesign, 
+    uploadDesignImage 
+  } = useDesignUpload();
+
+  const [formData, setFormData] = useState({
+    username: "",
+    bio: "",
+    contact_details: "",
+    education: "",
+    experience: "",
+    skills: "",
+    social_links: "",
+    contact_email: ""
+  });
 
   useEffect(() => {
-    const fetchArchitectData = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (!id) {
-          throw new Error("Architect ID is missing");
-        }
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
 
-        // Fetch architect profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', id)
-          .eq('role', 'architect')
+    const fetchProfileData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
           .single();
 
-        if (profileError) throw profileError;
-        if (!profileData) throw new Error("Architect not found");
+        if (error) {
+          throw error;
+        }
 
-        setProfileData(profileData);
+        if (data) {
+          setProfileData(data);
+          setFormData({
+            username: data.username || "",
+            bio: data.bio || "",
+            contact_details: data.contact_details || "",
+            education: data.education || "",
+            experience: data.experience || "",
+            skills: data.skills || "",
+            social_links: data.social_links || "",
+            contact_email: data.contact_email || ""
+          });
 
-        // Fetch architect designs
-        const { data: designsData, error: designsError } = await supabase
-          .from('designs')
-          .select('*')
-          .eq('user_id', id)
-          .order('created_at', { ascending: false });
-
-        if (designsError) throw designsError;
-        setDesigns(designsData || []);
-
-      } catch (error: any) {
-        console.error("Error fetching architect data:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Failed to load architect profile",
-        });
-      } finally {
-        setIsLoading(false);
+          // Set profile image preview if exists
+          if (data.avatar_url) {
+            setProfileImagePreview(data.avatar_url);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
       }
     };
 
-    fetchArchitectData();
-  }, [id, toast]);
+    fetchProfileData();
+  }, [user, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-design-primary" />
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
 
-  if (!profileData) {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setProfileImage(file);
+      setProfileImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+    try {
+      let avatarUrl = profileData?.avatar_url;
+
+      // Upload new profile image if selected
+      if (profileImage) {
+        const fileExt = profileImage.name.split('.').pop();
+        const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, profileImage);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        avatarUrl = urlData.publicUrl;
+      }
+
+      // Update user profile
+      const { error } = await supabase
+        .from("users")
+        .update({
+          ...formData,
+          avatar_url: avatarUrl
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update profileData state
+      setProfileData({
+        ...profileData,
+        ...formData,
+        avatar_url: avatarUrl
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated."
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "There was a problem updating your profile. Please try again."
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (!user || !profileData) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center flex-col">
-          <h2 className="text-2xl font-semibold mb-4">Architect Not Found</h2>
-          <Button onClick={() => navigate('/architects')}>
-            Back to Architects
-          </Button>
-        </main>
-        <Footer />
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Loading profile...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-grow bg-gray-50 py-12">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary">
-                  {profileData.username?.charAt(0).toUpperCase() || 'A'}
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold">{profileData.username}</h1>
-                  <p className="text-primary">{profileData.skills || "Architect"}</p>
-                </div>
+    <>
+      <Header />
+      <main className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <Card className="overflow-hidden mb-8">
+            <div className="bg-gradient-to-r from-design-soft-purple to-design-soft-blue h-32 md:h-48"></div>
+            <div className="px-4 sm:px-6 md:px-8 pb-6 -mt-16 flex flex-wrap md:flex-nowrap">
+              <div className="w-full md:w-auto flex flex-col items-center md:items-start">
+                <Avatar className="border-4 border-white h-32 w-32 bg-white">
+                  {profileImagePreview ? (
+                    <AvatarImage src={profileImagePreview} alt={formData.username} />
+                  ) : (
+                    <AvatarFallback className="text-4xl bg-design-primary/10 text-design-primary">
+                      {formData.username ? formData.username.charAt(0).toUpperCase() : "A"}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                {isEditing && (
+                  <div className="mt-4 w-full">
+                    <Label htmlFor="profile-image" className="block text-sm font-medium mb-1">
+                      Profile Image
+                    </Label>
+                    <Input
+                      id="profile-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="w-full"
+                    />
+                  </div>
+                )}
               </div>
-              
-              {user && user.id !== profileData.id && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsChatOpen(true)}
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Contact
-                </Button>
-              )}
-            </div>
 
-            <ArchitectInfo profileData={profileData} user={profileData} />
-          </div>
+              <div className="w-full md:pl-8 pt-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    {isEditing ? (
+                      <div className="mb-4">
+                        <Label htmlFor="username" className="block text-sm font-medium mb-1">
+                          Name
+                        </Label>
+                        <Input
+                          id="username"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          placeholder="Your name"
+                          className="max-w-md"
+                        />
+                      </div>
+                    ) : (
+                      <h1 className="text-3xl font-bold">{formData.username}</h1>
+                    )}
 
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-2xl font-bold mb-6">Architect Designs</h2>
-            {designs.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-muted-foreground">This architect hasn't uploaded any designs yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {designs.map((design) => (
-                  <div key={design.id} className="overflow-hidden rounded-lg border bg-card shadow-sm">
-                    <div className="aspect-square relative">
-                      <img
-                        src={design.image_url}
-                        alt={design.title}
-                        className="object-cover w-full h-full"
+                    {isEditing ? (
+                      <div className="mb-4">
+                        <Label htmlFor="bio" className="block text-sm font-medium mb-1">
+                          Bio
+                        </Label>
+                        <Textarea
+                          id="bio"
+                          name="bio"
+                          value={formData.bio}
+                          onChange={handleInputChange}
+                          placeholder="Tell us about yourself"
+                          className="max-w-md h-24"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground mt-2">{formData.bio || "No bio provided"}</p>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditing(false)}
+                        disabled={isSaving}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveProfile} disabled={isSaving}>
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Profile
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={() => setIsEditing(true)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
+
+                {isEditing ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="contact_details" className="block text-sm font-medium mb-1">
+                        Contact Number
+                      </Label>
+                      <Input
+                        id="contact_details"
+                        name="contact_details"
+                        value={formData.contact_details}
+                        onChange={handleInputChange}
+                        placeholder="Your contact number"
                       />
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-medium">{design.title}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
-                      </p>
-                      
-                      {/* Display additional metadata based on category */}
-                      {design.category === 'floorplan' && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {design.rooms && (
-                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
-                              {design.rooms} {parseInt(design.rooms) === 1 ? 'Room' : 'Rooms'}
-                            </span>
-                          )}
-                          {design.size && (
-                            <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md">
-                              {design.size} sq ft
-                            </span>
-                          )}
-                        </div>
-                      )}
-                      
-                      {design.category === 'inspiration' && design.style && (
-                        <div className="mt-2">
-                          <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
-                            {design.style.charAt(0).toUpperCase() + design.style.slice(1)} Style
-                          </span>
-                        </div>
-                      )}
+                    <div>
+                      <Label htmlFor="contact_email" className="block text-sm font-medium mb-1">
+                        Business Email
+                      </Label>
+                      <Input
+                        id="contact_email"
+                        name="contact_email"
+                        value={formData.contact_email}
+                        onChange={handleInputChange}
+                        placeholder="Your business email"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="education" className="block text-sm font-medium mb-1">
+                        Education
+                      </Label>
+                      <Input
+                        id="education"
+                        name="education"
+                        value={formData.education}
+                        onChange={handleInputChange}
+                        placeholder="Your educational background"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="experience" className="block text-sm font-medium mb-1">
+                        Experience
+                      </Label>
+                      <Input
+                        id="experience"
+                        name="experience"
+                        value={formData.experience}
+                        onChange={handleInputChange}
+                        placeholder="Your professional experience"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="skills" className="block text-sm font-medium mb-1">
+                        Specialization
+                      </Label>
+                      <Input
+                        id="skills"
+                        name="skills"
+                        value={formData.skills}
+                        onChange={handleInputChange}
+                        placeholder="Your skills and specializations"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="social_links" className="block text-sm font-medium mb-1">
+                        Location
+                      </Label>
+                      <Input
+                        id="social_links"
+                        name="social_links"
+                        value={formData.social_links}
+                        onChange={handleInputChange}
+                        placeholder="Your location"
+                      />
                     </div>
                   </div>
-                ))}
+                ) : (
+                  <ArchitectInfo profileData={profileData} user={user} />
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          </Card>
+
+          <Tabs defaultValue="designs" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="designs">My Designs</TabsTrigger>
+              <TabsTrigger value="stats">Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="designs">
+              <CardContent className="p-0">
+                <ArchitectDesigns 
+                  designs={designs}
+                  designImage={designImage}
+                  uploadingDesign={uploadingDesign}
+                  setDesignImage={setDesignImage}
+                  uploadDesign={uploadDesign}
+                  uploadDesignImage={uploadDesignImage}
+                  toggleLikeDesign={toggleLikeDesign}
+                  toggleSaveDesign={toggleSaveDesign}
+                  deleteDesign={deleteDesign}
+                  updateDesign={updateDesign}
+                />
+              </CardContent>
+            </TabsContent>
+            
+            <TabsContent value="stats">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Design Analytics</h3>
+                  <p className="text-muted-foreground">
+                    Analytics features will be available soon. Track views, likes, and interactions with your designs.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       <Footer />
-      
-      {profileData && (
-        <ChatDialog
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          architect={profileData}
-        />
-      )}
-    </div>
+    </>
   );
 };
 
