@@ -22,6 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { DESIGN_TYPES } from "@/types/design";
 
 export type ProjectFilters = {
   style: string;
@@ -49,6 +50,15 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
   });
   
   useEffect(() => {
+    // When type changes, update the category filter accordingly
+    if (type !== "all") {
+      setFilters(prev => ({...prev, category: type, type: type}));
+    } else {
+      setFilters(prev => ({...prev, type: type}));
+    }
+  }, [type]);
+  
+  useEffect(() => {
     onFilterChange(filters);
   }, [filters, onFilterChange]);
 
@@ -64,7 +74,7 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
       size: [0, 5000],
       sortBy: "newest",
       type: type,
-      category: "all"
+      category: filters.category
     };
     setFilters(defaultFilters);
   };
@@ -90,6 +100,7 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
         </Select>
       </div>
 
+      {/* Design Style filter - only show for inspiration designs */}
       {(filters.category === "inspiration" || filters.category === "all") && (
         <div>
           <label className="text-sm font-medium block mb-2">
@@ -104,19 +115,17 @@ const ProjectFilters = ({ onFilterChange, type }: ProjectFiltersProps) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Styles</SelectItem>
-              <SelectItem value="modern">Modern</SelectItem>
-              <SelectItem value="minimalist">Minimalist</SelectItem>
-              <SelectItem value="contemporary">Contemporary</SelectItem>
-              <SelectItem value="traditional">Traditional</SelectItem>
-              <SelectItem value="industrial">Industrial</SelectItem>
-              <SelectItem value="mediterranean">Mediterranean</SelectItem>
-              <SelectItem value="scandinavian">Scandinavian</SelectItem>
-              <SelectItem value="farmhouse">Farmhouse</SelectItem>
+              {DESIGN_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       )}
 
+      {/* Floor plan specific filters */}
       {(filters.category === "floorplan" || filters.category === "all") && (
         <>
           <div>

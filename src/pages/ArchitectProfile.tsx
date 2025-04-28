@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ArchitectInfo from "@/components/architect/ArchitectInfo";
-import ArchitectDesigns from "@/components/architect/ArchitectDesigns";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 import { ChatDialog } from "@/components/chat/ChatDialog";
@@ -147,6 +146,33 @@ const ArchitectProfile = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium">{design.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
+                      </p>
+                      
+                      {/* Display additional metadata based on category */}
+                      {design.category === 'floorplan' && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {design.rooms && (
+                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                              {design.rooms} {parseInt(design.rooms) === 1 ? 'Room' : 'Rooms'}
+                            </span>
+                          )}
+                          {design.size && (
+                            <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md">
+                              {design.size} sq ft
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {design.category === 'inspiration' && design.style && (
+                        <div className="mt-2">
+                          <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
+                            {design.style.charAt(0).toUpperCase() + design.style.slice(1)} Style
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

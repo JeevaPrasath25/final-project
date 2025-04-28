@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit, Trash2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -10,6 +10,9 @@ import ArchitectInfo from "@/components/architect/ArchitectInfo";
 import { useProfile } from "@/hooks/useProfile";
 import { useDesigns } from "@/hooks/useDesigns";
 import ArchitectUploadForm from "@/components/designs/ArchitectUploadForm";
+import DesignCard from "@/components/designs/DesignCard";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const MyProfile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -261,12 +264,58 @@ const MyProfile = () => {
                         alt={design.title}
                         className="object-cover w-full h-full"
                       />
+                      <div className="absolute top-2 right-2 flex space-x-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" className="h-8 w-8">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Design</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this design? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteDesign(design.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium">{design.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
                         {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
                       </p>
+                      
+                      {design.category === 'floorplan' && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {design.rooms && (
+                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                              {design.rooms} {parseInt(design.rooms as string) === 1 ? 'Room' : 'Rooms'}
+                            </span>
+                          )}
+                          {design.size && (
+                            <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md">
+                              {design.size} sq ft
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {design.category === 'inspiration' && design.style && (
+                        <div className="mt-2">
+                          <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
+                            {design.style.charAt(0).toUpperCase() + design.style.slice(1)} Style
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
