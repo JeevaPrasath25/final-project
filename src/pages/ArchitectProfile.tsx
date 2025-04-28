@@ -1,5 +1,4 @@
-
-import Header from "@/components/layout/Header";
+import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -80,7 +79,6 @@ const ArchitectProfile = () => {
             contact_email: data.contact_email || ""
           });
 
-          // Set profile image preview if exists
           if (data.avatar_url) {
             setProfileImagePreview(data.avatar_url);
           }
@@ -116,7 +114,6 @@ const ArchitectProfile = () => {
     try {
       let avatarUrl = profileData?.avatar_url;
 
-      // Upload new profile image if selected
       if (profileImage) {
         const fileExt = profileImage.name.split('.').pop();
         const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -132,7 +129,6 @@ const ArchitectProfile = () => {
         avatarUrl = urlData.publicUrl;
       }
 
-      // Update user profile
       const { error } = await supabase
         .from("users")
         .update({
@@ -143,7 +139,6 @@ const ArchitectProfile = () => {
 
       if (error) throw error;
 
-      // Update profileData state
       setProfileData({
         ...profileData,
         ...formData,
@@ -178,7 +173,7 @@ const ArchitectProfile = () => {
 
   return (
     <>
-      <Header />
+      <Navbar />
       <main className="bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <Card className="overflow-hidden mb-8">

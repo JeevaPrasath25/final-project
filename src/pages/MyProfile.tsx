@@ -9,6 +9,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ArchitectInfo from "@/components/architect/ArchitectInfo";
 import { useProfile } from "@/hooks/useProfile";
 import { useDesigns } from "@/hooks/useDesigns";
+import { useDesignUpload } from "@/hooks/useDesignUpload";
 import ArchitectUploadForm from "@/components/designs/ArchitectUploadForm";
 import DesignCard from "@/components/designs/DesignCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -30,17 +31,14 @@ const MyProfile = () => {
   } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
   
+  const { designs, toggleLikeDesign, toggleSaveDesign, deleteDesign, updateDesign } = useDesigns();
   const { 
-    designs, 
     designImage, 
     uploadingDesign, 
     setDesignImage, 
     uploadDesign, 
-    uploadDesignImage, 
-    toggleLikeDesign, 
-    toggleSaveDesign, 
-    deleteDesign 
-  } = useDesigns();
+    uploadDesignImage 
+  } = useDesignUpload();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -291,28 +289,28 @@ const MyProfile = () => {
                     <div className="p-4">
                       <h3 className="font-medium">{design.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
+                        {design.metadata?.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
                       </p>
                       
-                      {design.category === 'floorplan' && (
+                      {design.metadata?.category === 'floorplan' && (
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {design.rooms && (
+                          {design.metadata.rooms && (
                             <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
-                              {design.rooms} {parseInt(design.rooms as string) === 1 ? 'Room' : 'Rooms'}
+                              {design.metadata.rooms} {parseInt(design.metadata.rooms.toString()) === 1 ? 'Room' : 'Rooms'}
                             </span>
                           )}
-                          {design.size && (
+                          {design.metadata.squareFeet && (
                             <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-md">
-                              {design.size} sq ft
+                              {design.metadata.squareFeet} sq ft
                             </span>
                           )}
                         </div>
                       )}
                       
-                      {design.category === 'inspiration' && design.style && (
+                      {design.metadata?.category === 'inspiration' && design.metadata?.designType && (
                         <div className="mt-2">
                           <span className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md">
-                            {design.style.charAt(0).toUpperCase() + design.style.slice(1)} Style
+                            {design.metadata.designType.charAt(0).toUpperCase() + design.metadata.designType.slice(1)} Style
                           </span>
                         </div>
                       )}

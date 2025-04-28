@@ -3,26 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-
-export interface Design {
-  id: string;
-  title: string;
-  image_url: string;
-  architect_id?: string;
-  user_id: string;
-  created_at: string;
-  liked_by_user?: boolean;
-  saved_by_user?: boolean;
-  design_likes?: { count: number };
-  design_saves?: { count: number };
-  metadata?: {
-    category: 'floorplan' | 'inspiration';
-    designType?: string;
-    rooms?: number;
-    squareFeet?: number;
-    [key: string]: any;
-  };
-}
+import { Design } from "@/types/design";
 
 export const useDesigns = (architectId?: string) => {
   const [designs, setDesigns] = useState<Design[]>([]);
@@ -54,13 +35,21 @@ export const useDesigns = (architectId?: string) => {
         query = query.eq('user_id', architectId);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      if (user) {
-        // For each design, check if the current user has liked or saved it
-        const enhancedDesigns = await Promise.all(data.map(async (design) => {
+      if (!data) {
+        setDesigns([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const formattedDesigns: Design[] = await Promise.all((data as any[]).map(async (design) => {
+        let userLiked = false;
+        let userSaved = false;
+
+        if (user) {
           // Check if user liked this design
           const { data: likeData } = await supabase
             .from('design_likes')
@@ -77,20 +66,35 @@ export const useDesigns = (architectId?: string) => {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          return {
-            ...design,
-            liked_by_user: !!likeData,
-            saved_by_user: !!saveData
-          };
-        }));
-        
-        setDesigns(enhancedDesigns);
-      } else {
-        setDesigns(data as Design[]);
-      }
+          userLiked = !!likeData;
+          userSaved = !!saveData;
+        }
+
+        const metadata = design.metadata || {};
+        const category = metadata.category || "inspiration";
+
+        return {
+          id: design.id,
+          title: design.title,
+          image_url: design.image_url,
+          user_id: design.user_id,
+          created_at: design.created_at,
+          liked_by_user: userLiked,
+          saved_by_user: userSaved,
+          design_likes: design.design_likes,
+          design_saves: design.design_saves,
+          metadata: metadata,
+          category: category,
+          rooms: category === "floorplan" ? metadata.rooms : undefined,
+          size: category === "floorplan" ? metadata.squareFeet : undefined,
+          style: category === "inspiration" ? metadata.designType : undefined
+        };
+      }));
+      
+      setDesigns(formattedDesigns);
     } catch (err: any) {
       console.error("Error fetching designs:", err);
-      setError(err.message);
+      setError(err.message || "Failed to load designs");
       toast({
         variant: "destructive",
         title: "Failed to load designs",

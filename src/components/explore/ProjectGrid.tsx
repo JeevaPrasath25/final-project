@@ -1,5 +1,5 @@
 
-import { Design } from "@/hooks/useDesigns";
+import { Design } from "@/types/design";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ArrowRight, Loader2, RefreshCw } from "lucide-react";
@@ -109,7 +109,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
         return;
       }
 
-      const formattedDesigns = data.map((design: any) => {
+      const formattedDesigns: Design[] = data.map((design: any) => {
         const metadata = design.metadata || {};
         let category = metadata.category || "inspiration";
         
@@ -117,6 +117,8 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
           id: design.id,
           title: design.title,
           image_url: design.image_url,
+          created_at: design.created_at,
+          user_id: design.user_id,
           style: category === "inspiration" ? metadata.designType || design.design_type : undefined,
           rooms: category === "floorplan" ? metadata.rooms : undefined,
           size: category === "floorplan" ? metadata.squareFeet : undefined,
@@ -125,7 +127,6 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
           tags: design.tags || [],
           architect_name: design.user?.username || "Unknown Architect",
           architect_id: design.user?.id || "",
-          user_id: design.user_id,
           category: category,
           metadata: metadata
         };
@@ -279,7 +280,7 @@ const ProjectGrid = ({ filters }: ProjectGridProps) => {
                 <>
                   {design.metadata?.rooms && (
                     <Badge variant="secondary" className="text-xs">
-                      {design.metadata.rooms} {parseInt(design.metadata.rooms as unknown as string) === 1 ? 'Room' : 'Rooms'}
+                      {design.metadata.rooms} {parseInt(design.metadata.rooms.toString()) === 1 ? 'Room' : 'Rooms'}
                     </Badge>
                   )}
                   
