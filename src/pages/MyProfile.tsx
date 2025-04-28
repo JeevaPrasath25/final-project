@@ -1,17 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProfileHeader from "@/components/profile/ProfileHeader";
-import ArchitectDesigns from "@/components/architect/ArchitectDesigns";
 import ArchitectInfo from "@/components/architect/ArchitectInfo";
 import { useProfile } from "@/hooks/useProfile";
 import { useDesigns } from "@/hooks/useDesigns";
+import ArchitectUploadForm from "@/components/designs/ArchitectUploadForm";
 
 const MyProfile = () => {
   const { user, loading: authLoading } = useAuth();
@@ -42,7 +40,6 @@ const MyProfile = () => {
   } = useDesigns();
 
   useEffect(() => {
-    // Only redirect if not authenticated after auth has finished loading
     if (!authLoading && !user) {
       toast({
         variant: "destructive",
@@ -250,17 +247,35 @@ const MyProfile = () => {
 
           <div className="bg-white rounded-lg shadow p-8">
             <h2 className="text-2xl font-bold mb-6">My Designs</h2>
-            <ArchitectDesigns
-              designs={designs}
-              designImage={designImage}
-              uploadingDesign={uploadingDesign}
-              setDesignImage={setDesignImage}
-              uploadDesign={uploadDesign}
-              uploadDesignImage={uploadDesignImage}
-              toggleLikeDesign={toggleLikeDesign}
-              toggleSaveDesign={toggleSaveDesign}
-              deleteDesign={deleteDesign}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-3">
+                <ArchitectUploadForm />
+              </div>
+              
+              {designs && designs.length > 0 ? (
+                designs.map((design) => (
+                  <div key={design.id} className="overflow-hidden rounded-lg border bg-card shadow-sm">
+                    <div className="aspect-square relative">
+                      <img
+                        src={design.image_url}
+                        alt={design.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-medium">{design.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {design.category === 'floorplan' ? 'Floor Plan' : 'Design Inspiration'}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="md:col-span-3 text-center py-10">
+                  <p className="text-muted-foreground">You haven't uploaded any designs yet.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
