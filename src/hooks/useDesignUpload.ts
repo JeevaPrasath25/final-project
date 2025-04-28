@@ -100,7 +100,7 @@ export const useDesignUpload = () => {
         return;
       }
 
-      const success = await uploadDesign(values.title, imageUrl, values.category, values.metadata);
+      const success = await uploadDesign(values.title, imageUrl);
 
       if (success) {
         form.reset();

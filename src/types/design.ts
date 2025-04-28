@@ -39,10 +39,3 @@ export interface DesignFormData {
   category: DesignCategory;
   metadata: DesignMetadata;
 }
-
-// Schema definition for the form
-export interface DesignFormSchemaType {
-  title: string;
-  category: DesignCategory;
-  metadata: DesignMetadata;
-}
