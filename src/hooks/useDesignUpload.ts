@@ -1,14 +1,14 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useStorage } from "@/hooks/useStorage";
+import { supabase } from "@/integrations/supabase/client";
 
-// Schema for design upload form validation
+// Form schema for design upload
 const designFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   category: z.enum(["floorplan", "inspiration"]),
@@ -19,7 +19,7 @@ const designFormSchema = z.object({
   }).optional(),
 });
 
-type DesignFormValues = z.infer<typeof designFormSchema>;
+type DesignFormData = z.infer<typeof designFormSchema>;
 
 export const useDesignUpload = () => {
   const [designImage, setDesignImage] = useState<File | null>(null);
@@ -27,20 +27,22 @@ export const useDesignUpload = () => {
   const [uploadingDesign, setUploadingDesign] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { uploadImage } = useStorage();
 
-  const form = useForm<DesignFormValues>({
+  // Initialize the form with default values
+  const form = useForm<DesignFormData>({
     resolver: zodResolver(designFormSchema),
     defaultValues: {
       title: "",
       category: "inspiration",
       metadata: {
+        rooms: 1,
+        squareFeet: 1000,
         designType: "modern",
       },
     },
   });
 
-  // Get the current category value
   const category = form.watch("category");
 
   const handleDesignImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,30 +70,25 @@ export const useDesignUpload = () => {
     }
   };
 
-  const uploadDesignImage = async () => {
-    if (!designImage || !user) return null;
-    
+  const uploadDesignImage = async (): Promise<string | null> => {
+    if (!designImage) {
+      toast({
+        variant: "destructive",
+        title: "No image selected",
+        description: "Please select an image to upload",
+      });
+      return null;
+    }
+
     try {
-      const fileExt = designImage.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `designs/${fileName}`;
-      
-      const { error: uploadError, data } = await supabase.storage
-        .from('design_images')
-        .upload(filePath, designImage);
-        
-      if (uploadError) throw uploadError;
-      
-      const { data: urlData } = supabase.storage.from('design_images').getPublicUrl(filePath);
-      
-      return urlData.publicUrl;
+      return await uploadImage(designImage);
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error uploading design image:", error);
       return null;
     }
   };
 
-  const uploadDesign = async (title: string, imageUrl: string) => {
+  const uploadDesign = async (title: string, imageUrl: string): Promise<boolean> => {
     if (!user) {
       toast({
         variant: "destructive",
@@ -100,81 +97,85 @@ export const useDesignUpload = () => {
       });
       return false;
     }
-    
+
     try {
-      setUploadingDesign(true);
+      const formData = form.getValues();
       
-      // Get form values
-      const formValues = form.getValues();
-      
-      // Format metadata based on category
-      const metadata: any = {
-        category: formValues.category
-      };
-      
-      if (formValues.category === "floorplan") {
-        metadata.rooms = formValues.metadata?.rooms || 1;
-        metadata.squareFeet = formValues.metadata?.squareFeet || 1000;
-      } else {
-        metadata.designType = formValues.metadata?.designType || "modern";
-      }
-      
+      // Create the post in the database
       const { error } = await supabase
         .from('posts')
         .insert({
-          title: title,
+          title,
           image_url: imageUrl,
           user_id: user.id,
-          metadata: metadata
+          metadata: formData.metadata,
+          design_type: formData.category === "inspiration" ? formData.metadata?.designType : undefined,
         });
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Design Uploaded",
-        description: "Your design has been successfully uploaded",
-      });
-      
-      return true;
-    } catch (error: any) {
-      console.error("Error in design upload:", error);
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error.message || "An unexpected error occurred",
-      });
-      return false;
-    } finally {
-      setUploadingDesign(false);
-    }
-  };
 
-  const onSubmit = async (values: DesignFormValues) => {
-    try {
-      const imageUrl = await uploadDesignImage();
-      if (!imageUrl) {
+      if (error) {
+        console.error("Error creating design:", error);
         toast({
           variant: "destructive",
           title: "Upload failed",
-          description: "Failed to upload the image. Please try again.",
+          description: "Failed to create the design. Please try again.",
         });
-        return;
+        return false;
       }
 
-      const success = await uploadDesign(values.title, imageUrl);
-      if (success) {
-        form.reset();
-        setDesignImage(null);
-        setDesignTitle("");
-        navigate("/architect-profile", { replace: true });
-      }
-    } catch (error: any) {
-      console.error("Error in onSubmit:", error);
+      toast({
+        title: "Design uploaded successfully",
+        description: "Your design has been shared with the community.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error in uploadDesign:", error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "An unexpected error occurred",
+        description: "An unexpected error occurred during upload.",
       });
+      return false;
+    }
+  };
+
+  const onSubmit = async (data: DesignFormData) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You must be logged in to upload designs",
+      });
+      return;
+    }
+
+    if (!designImage) {
+      toast({
+        variant: "destructive",
+        title: "No image selected",
+        description: "Please select an image to upload",
+      });
+      return;
+    }
+
+    try {
+      setUploadingDesign(true);
+      
+      // Upload the image
+      const imageUrl = await uploadDesignImage();
+      if (!imageUrl) return;
+      
+      // Upload the design
+      await uploadDesign(data.title, imageUrl);
+      
+      // Reset form after successful upload
+      form.reset();
+      setDesignImage(null);
+      setDesignTitle("");
+    } catch (error) {
+      console.error("Error in onSubmit:", error);
+    } finally {
+      setUploadingDesign(false);
     }
   };
 
@@ -186,9 +187,9 @@ export const useDesignUpload = () => {
     setDesignImage,
     uploadingDesign,
     handleDesignImageChange,
-    uploadDesignImage,
     uploadDesign,
+    uploadDesignImage,
     onSubmit,
-    category
+    category,
   };
 };
