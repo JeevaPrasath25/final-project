@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +16,10 @@ export const useDesigns = (architectId?: string) => {
       setIsLoading(true);
       setError(null);
       
-      // Fixed query: Using a simpler query approach without joins that were causing errors
       let query = supabase
         .from('posts')
         .select(`*`);
       
-      // If architectId is provided, filter designs by that architect
       if (architectId) {
         query = query.eq('user_id', architectId);
       }
@@ -37,17 +34,14 @@ export const useDesigns = (architectId?: string) => {
         return;
       }
 
-      // Get all designs first
       const designsData = data as any[];
       
-      // Fetch likes and saves counts separately to avoid relationship errors
       const formattedDesigns: Design[] = await Promise.all(designsData.map(async (design) => {
         let userLiked = false;
         let userSaved = false;
         let likesCount = 0;
         let savesCount = 0;
 
-        // Count likes for this design
         const { count: likesCountData, error: likesError } = await supabase
           .from('design_likes')
           .select('*', { count: 'exact', head: false })
@@ -57,7 +51,6 @@ export const useDesigns = (architectId?: string) => {
           likesCount = likesCountData || 0;
         }
         
-        // Count saves for this design
         const { count: savesCountData, error: savesError } = await supabase
           .from('design_saves')
           .select('*', { count: 'exact', head: false })
@@ -68,7 +61,6 @@ export const useDesigns = (architectId?: string) => {
         }
 
         if (user) {
-          // Check if user liked this design
           const { data: likeData } = await supabase
             .from('design_likes')
             .select()
@@ -76,7 +68,6 @@ export const useDesigns = (architectId?: string) => {
             .eq('user_id', user.id)
             .maybeSingle();
           
-          // Check if user saved this design
           const { data: saveData } = await supabase
             .from('design_saves')
             .select()
@@ -135,14 +126,12 @@ export const useDesigns = (architectId?: string) => {
 
     try {
       if (liked) {
-        // Unlike the design
         await supabase
           .from('design_likes')
           .delete()
           .eq('design_id', id)
           .eq('user_id', user.id);
       } else {
-        // Like the design
         await supabase
           .from('design_likes')
           .insert({
@@ -151,7 +140,6 @@ export const useDesigns = (architectId?: string) => {
           });
       }
 
-      // Update the designs state
       setDesigns(designs.map(design => {
         if (design.id === id) {
           const likesCount = design.design_likes?.count || 0;
@@ -187,14 +175,12 @@ export const useDesigns = (architectId?: string) => {
 
     try {
       if (saved) {
-        // Unsave the design
         await supabase
           .from('design_saves')
           .delete()
           .eq('design_id', id)
           .eq('user_id', user.id);
       } else {
-        // Save the design
         await supabase
           .from('design_saves')
           .insert({
@@ -203,7 +189,6 @@ export const useDesigns = (architectId?: string) => {
           });
       }
 
-      // Update the designs state
       setDesigns(designs.map(design => {
         if (design.id === id) {
           const savesCount = design.design_saves?.count || 0;
@@ -238,7 +223,6 @@ export const useDesigns = (architectId?: string) => {
     }
 
     try {
-      // Check if user is the owner of this design
       const design = designs.find(d => d.id === id);
       if (!design || design.user_id !== user.id) {
         toast({
@@ -249,7 +233,6 @@ export const useDesigns = (architectId?: string) => {
         return;
       }
 
-      // Delete the design
       const { error } = await supabase
         .from('posts')
         .delete()
@@ -257,7 +240,6 @@ export const useDesigns = (architectId?: string) => {
 
       if (error) throw error;
 
-      // Update the designs state
       setDesigns(designs.filter(design => design.id !== id));
 
       toast({
@@ -285,7 +267,6 @@ export const useDesigns = (architectId?: string) => {
     }
 
     try {
-      // Check if user is the owner of this design
       const design = designs.find(d => d.id === id);
       if (!design || design.user_id !== user.id) {
         toast({
@@ -296,7 +277,6 @@ export const useDesigns = (architectId?: string) => {
         return false;
       }
 
-      // Update the design
       const { error } = await supabase
         .from('posts')
         .update(updates)
@@ -304,7 +284,6 @@ export const useDesigns = (architectId?: string) => {
 
       if (error) throw error;
 
-      // Update the designs state
       setDesigns(designs.map(design => {
         if (design.id === id) {
           return { ...design, ...updates };
