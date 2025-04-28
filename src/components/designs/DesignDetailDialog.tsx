@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Dialog, 
@@ -12,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Design } from "@/hooks/useDesigns";
+import { Design } from "@/types/design";
 import { useToast } from "@/hooks/use-toast";
 import { Edit, Save } from "lucide-react";
 import { DESIGN_TYPES } from "@/types/design";
@@ -33,7 +32,6 @@ const DesignDetailDialog = ({ design, isOpen, onClose, onUpdate }: DesignDetailD
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  // Reset form when design changes
   const resetForm = () => {
     if (design) {
       setTitle(design.title);
@@ -44,7 +42,6 @@ const DesignDetailDialog = ({ design, isOpen, onClose, onUpdate }: DesignDetailD
     setIsEditing(false);
   };
 
-  // Initialize form when dialog opens
   const handleOpenChange = (open: boolean) => {
     if (open && design) {
       resetForm();
@@ -61,7 +58,6 @@ const DesignDetailDialog = ({ design, isOpen, onClose, onUpdate }: DesignDetailD
     try {
       const isFloorplan = design.metadata?.category === "floorplan";
       
-      // Prepare updated metadata based on category
       const updatedMetadata = {
         ...design.metadata,
         ...(isFloorplan 

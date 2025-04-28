@@ -1,8 +1,7 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DesignGrid from "@/components/designs/DesignGrid";
 import DesignUploadForm from "@/components/designs/DesignUploadForm";
-import { Design } from "@/hooks/useDesigns";
+import { Design } from "@/types/design";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 

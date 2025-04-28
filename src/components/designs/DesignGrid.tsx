@@ -1,8 +1,7 @@
-
 import { ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DesignCard from "./DesignCard";
-import { Design } from "@/hooks/useDesigns";
+import { Design } from "@/types/design";
 
 interface DesignGridProps {
   designs: Design[];
