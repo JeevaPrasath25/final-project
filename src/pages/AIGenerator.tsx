@@ -12,7 +12,7 @@ const AIGeneratorPage = () => {
         <title>AI Dream Home Generator | Design Next</title>
         <meta
           name="description"
-          content="Generate dream home designs and floor plans with AI. Describe your vision and see it come to life."
+          content="Generate dream home designs with AI. Describe your vision and see it come to life."
         />
       </Helmet>
       <Navbar />
