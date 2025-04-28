@@ -1,3 +1,4 @@
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DesignGrid from "@/components/designs/DesignGrid";
 import DesignUploadForm from "@/components/designs/DesignUploadForm";
@@ -32,16 +33,21 @@ const ArchitectDesigns = ({
 }: ArchitectDesignsProps) => {
   const { user } = useAuth();
   const [myDesigns, setMyDesigns] = useState<Design[]>([]);
+  const [uploadedDesigns, setUploadedDesigns] = useState<Design[]>([]);
   const [floorplans, setFloorplans] = useState<Design[]>([]);
   const [inspirations, setInspirations] = useState<Design[]>([]);
   
   useEffect(() => {
-    // Filter designs to only show those created by the current user
     if (user && designs) {
+      // Filter designs for "My Designs" (saved and liked)
       const filteredDesigns = designs.filter(design => 
         design.architect_id === user.id || design.user_id === user.id
       );
       setMyDesigns(filteredDesigns);
+      
+      // Filter designs for "Uploaded Designs" (only those uploaded by the architect)
+      const uploaded = designs.filter(design => design.user_id === user.id);
+      setUploadedDesigns(uploaded);
       
       // Further filter by category
       setFloorplans(filteredDesigns.filter(design => 
@@ -58,6 +64,7 @@ const ArchitectDesigns = ({
     <Tabs defaultValue="all" className="space-y-6">
       <TabsList className="mb-4">
         <TabsTrigger value="all">All Designs</TabsTrigger>
+        <TabsTrigger value="uploaded">My Uploaded Designs</TabsTrigger>
         <TabsTrigger value="floorplans">Floor Plans</TabsTrigger>
         <TabsTrigger value="inspirations">Design Inspirations</TabsTrigger>
         <TabsTrigger value="upload">Upload New Design</TabsTrigger>
@@ -71,7 +78,20 @@ const ArchitectDesigns = ({
           onDeleteDesign={deleteDesign}
           onUpdateDesign={updateDesign}
           onUploadClick={() => {
-            // Programmatically switch to the upload tab
+            const uploadTab = document.querySelector('[data-state="inactive"][value="upload"]') as HTMLButtonElement;
+            uploadTab?.click();
+          }}
+        />
+      </TabsContent>
+
+      <TabsContent value="uploaded" className="space-y-6">
+        <DesignGrid
+          designs={uploadedDesigns}
+          onLike={toggleLikeDesign}
+          onSave={toggleSaveDesign}
+          onDeleteDesign={deleteDesign}
+          onUpdateDesign={updateDesign}
+          onUploadClick={() => {
             const uploadTab = document.querySelector('[data-state="inactive"][value="upload"]') as HTMLButtonElement;
             uploadTab?.click();
           }}
@@ -86,7 +106,6 @@ const ArchitectDesigns = ({
           onDeleteDesign={deleteDesign}
           onUpdateDesign={updateDesign}
           onUploadClick={() => {
-            // Programmatically switch to the upload tab
             const uploadTab = document.querySelector('[data-state="inactive"][value="upload"]') as HTMLButtonElement;
             uploadTab?.click();
           }}
@@ -101,7 +120,6 @@ const ArchitectDesigns = ({
           onDeleteDesign={deleteDesign}
           onUpdateDesign={updateDesign}
           onUploadClick={() => {
-            // Programmatically switch to the upload tab
             const uploadTab = document.querySelector('[data-state="inactive"][value="upload"]') as HTMLButtonElement;
             uploadTab?.click();
           }}
