@@ -3,7 +3,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { UseFormReturn } from "react-hook-form";
-import { DesignCategory, DesignType, DESIGN_TYPES } from "@/types/design";
+import { DesignCategory } from "@/types/design";
 
 interface DesignFormFieldsProps {
   form: UseFormReturn<any>;
@@ -44,10 +44,10 @@ export const DesignFormFields = ({
         name="category"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Category</FormLabel>
+            <FormLabel>Design Category</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger className="border-2">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
               </FormControl>

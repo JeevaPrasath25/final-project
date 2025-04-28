@@ -25,7 +25,7 @@ const ArchitectUploadForm = () => {
   } = useDesignUpload();
 
   return (
-    <Card>
+    <Card className="shadow-lg border-t-4 border-t-design-primary">
       <CardContent className="p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold mb-4 font-playfair">Upload New Design</h2>
@@ -42,11 +42,17 @@ const ArchitectUploadForm = () => {
               setDesignTitle={setDesignTitle}
             />
 
-            {category === "floorplan" ? (
-              <FloorPlanFields form={form} />
-            ) : (
-              <InspirationFields form={form} />
-            )}
+            <div className="p-4 bg-gray-50 rounded-md">
+              <h3 className="text-sm font-medium mb-4">
+                {category === "floorplan" ? "Floor Plan Details" : "Design Inspiration Details"}
+              </h3>
+              
+              {category === "floorplan" ? (
+                <FloorPlanFields form={form} />
+              ) : (
+                <InspirationFields form={form} />
+              )}
+            </div>
 
             <DesignImageUpload
               designImage={designImage}
@@ -64,7 +70,7 @@ const ArchitectUploadForm = () => {
               <Button 
                 type="submit" 
                 disabled={!designImage || uploadingDesign || !designTitle}
-                className="w-full"
+                className="w-full bg-design-primary hover:bg-design-primary/90"
               >
                 {uploadingDesign ? (
                   <>

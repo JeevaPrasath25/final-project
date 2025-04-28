@@ -10,29 +10,31 @@ interface InspirationFieldsProps {
 
 export const InspirationFields = ({ form }: InspirationFieldsProps) => {
   return (
-    <FormField
-      control={form.control}
-      name="metadata.designType"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Design Type</FormLabel>
-          <Select onValueChange={field.onChange} value={field.value}>
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a design type" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {DESIGN_TYPES.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+    <div className="space-y-6">
+      <FormField
+        control={form.control}
+        name="metadata.designType"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Design Style</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value || "modern"}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a design style" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {DESIGN_TYPES.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
   );
 };
