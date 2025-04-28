@@ -228,36 +228,42 @@ export type Database = {
       }
       posts: {
         Row: {
+          architect_id: string | null
           created_at: string
           description: string | null
           design_type: string | null
           hire_me: boolean | null
           id: string
           image_url: string
+          metadata: Json | null
           tags: string[] | null
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          architect_id?: string | null
           created_at?: string
           description?: string | null
           design_type?: string | null
           hire_me?: boolean | null
           id?: string
           image_url: string
+          metadata?: Json | null
           tags?: string[] | null
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          architect_id?: string | null
           created_at?: string
           description?: string | null
           design_type?: string | null
           hire_me?: boolean | null
           id?: string
           image_url?: string
+          metadata?: Json | null
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -368,7 +374,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      design_likes_count: {
+        Row: {
+          count: number | null
+          design_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_likes_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_saves_count: {
+        Row: {
+          count: number | null
+          design_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_saves_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
