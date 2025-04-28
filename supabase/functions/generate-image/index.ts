@@ -23,22 +23,13 @@ serve(async (req) => {
 
     console.log(`Making request to OpenAI API with ${type} prompt:`, prompt);
 
-    // Create proper string headers - this is the key fix
-    const headers = {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    };
-
-    console.log('Sending request to OpenAI with headers:', 
-      JSON.stringify({
-        Authorization: `Bearer ${apiKey.substring(0, 5)}...`,
-        'Content-Type': 'application/json'
-      })
-    );
-
+    // Fix: Using object for headers instead of string
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: headers,
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         model: "dall-e-3",
         prompt: type === 'floorplan' 

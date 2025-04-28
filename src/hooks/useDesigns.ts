@@ -17,18 +17,10 @@ export const useDesigns = (architectId?: string) => {
       setIsLoading(true);
       setError(null);
       
+      // Fixed query: Using a simpler query approach without joins that were causing errors
       let query = supabase
         .from('posts')
-        .select(`
-          id,
-          title,
-          image_url,
-          user_id,
-          created_at,
-          metadata,
-          design_likes: design_likes_count(*),
-          design_saves: design_saves_count(*)
-        `);
+        .select(`*`);
       
       // If architectId is provided, filter designs by that architect
       if (architectId) {
@@ -45,9 +37,35 @@ export const useDesigns = (architectId?: string) => {
         return;
       }
 
-      const formattedDesigns: Design[] = await Promise.all((data as any[]).map(async (design) => {
+      // Get all designs first
+      const designsData = data as any[];
+      
+      // Fetch likes and saves counts separately to avoid relationship errors
+      const formattedDesigns: Design[] = await Promise.all(designsData.map(async (design) => {
         let userLiked = false;
         let userSaved = false;
+        let likesCount = 0;
+        let savesCount = 0;
+
+        // Count likes for this design
+        const { count: likesCountData, error: likesError } = await supabase
+          .from('design_likes')
+          .select('*', { count: 'exact', head: false })
+          .eq('design_id', design.id);
+          
+        if (!likesError) {
+          likesCount = likesCountData || 0;
+        }
+        
+        // Count saves for this design
+        const { count: savesCountData, error: savesError } = await supabase
+          .from('design_saves')
+          .select('*', { count: 'exact', head: false })
+          .eq('design_id', design.id);
+          
+        if (!savesError) {
+          savesCount = savesCountData || 0;
+        }
 
         if (user) {
           // Check if user liked this design
@@ -81,8 +99,8 @@ export const useDesigns = (architectId?: string) => {
           created_at: design.created_at,
           liked_by_user: userLiked,
           saved_by_user: userSaved,
-          design_likes: design.design_likes,
-          design_saves: design.design_saves,
+          design_likes: { count: likesCount },
+          design_saves: { count: savesCount },
           metadata: metadata,
           category: category,
           rooms: category === "floorplan" ? metadata.rooms : undefined,
