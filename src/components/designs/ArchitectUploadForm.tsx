@@ -2,13 +2,12 @@
 import { useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { DesignImageUpload } from "./DesignImageUpload";
 import { FloorPlanFields } from "./FloorPlanFields";
 import { InspirationFields } from "./InspirationFields";
+import { DesignFormFields } from "./DesignFormFields";
 import { useDesignUpload } from "@/hooks/useDesignUpload";
 
 const ArchitectUploadForm = () => {
@@ -37,47 +36,10 @@ const ArchitectUploadForm = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Design Title</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter a title for your design"
-                      value={designTitle}
-                      onChange={(e) => {
-                        setDesignTitle(e.target.value);
-                        field.onChange(e);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="floorplan">Floor Plan</SelectItem>
-                      <SelectItem value="inspiration">Design Inspiration</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <DesignFormFields 
+              form={form}
+              designTitle={designTitle}
+              setDesignTitle={setDesignTitle}
             />
 
             {category === "floorplan" ? (

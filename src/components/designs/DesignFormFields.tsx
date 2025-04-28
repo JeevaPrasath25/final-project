@@ -45,25 +45,7 @@ export const DesignFormFields = ({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Category</FormLabel>
-            <Select
-              onValueChange={(value: DesignCategory) => {
-                field.onChange(value);
-                // Reset metadata when category changes
-                if (value === "floorplan") {
-                  form.setValue("metadata", {
-                    category: "floorplan",
-                    rooms: undefined,
-                    squareFeet: undefined
-                  });
-                } else {
-                  form.setValue("metadata", {
-                    category: "inspiration",
-                    designType: undefined
-                  });
-                }
-              }}
-              value={field.value}
-            >
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
@@ -78,80 +60,6 @@ export const DesignFormFields = ({
           </FormItem>
         )}
       />
-
-      {form.watch("category") === "floorplan" ? (
-        <>
-          <FormField
-            control={form.control}
-            name="metadata.rooms"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Number of Rooms</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number"
-                    min={1}
-                    max={20}
-                    placeholder="Enter number of rooms"
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="metadata.squareFeet"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Square Feet</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number"
-                    min={100}
-                    max={20000}
-                    placeholder="Enter square footage"
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </>
-      ) : form.watch("category") === "inspiration" && (
-        <FormField
-          control={form.control}
-          name="metadata.designType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Design Type</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a design type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {DESIGN_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
     </div>
   );
 };
