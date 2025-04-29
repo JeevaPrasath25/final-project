@@ -75,9 +75,9 @@ export function useAiGenerator() {
       const randomIndex = Math.floor(Math.random() * images.length);
       const fallbackImage = images[randomIndex];
       
+      // Using a quieter notification when falling back to sample images
       toast({
-        title: "Using sample image",
-        description: "Our AI service is temporarily unavailable. Showing sample images instead.",
+        description: "Using sample image - AI generation is currently in maintenance mode",
       });
       
       setGeneratedImage(fallbackImage);

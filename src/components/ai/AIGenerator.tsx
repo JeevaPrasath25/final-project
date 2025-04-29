@@ -25,7 +25,6 @@ const AIGenerator = () => {
     useFallback,
     setUseFallback
   } = useAiGenerator();
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const handleSamplePrompt = (sample: string) => {
@@ -42,12 +41,11 @@ const AIGenerator = () => {
       return;
     }
 
-    setError(null);
     try {
       await generateDesignWithAI("house");
     } catch (error) {
-      setError("Failed to generate image. Please try again.");
       console.error("Error in handleGenerate:", error);
+      // Error handling now happens inside the useAiGenerator hook
     }
   };
 
@@ -110,13 +108,6 @@ const AIGenerator = () => {
               </Button>
             ))}
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-              <p className="font-medium">Error:</p>
-              <p>{error}</p>
-            </div>
-          )}
 
           <div className="flex justify-between">
             <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(aiPrompt)}>
