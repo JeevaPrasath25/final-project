@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Sparkles, RefreshCcw, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAiGenerator } from "@/hooks/useAiGenerator";
 
@@ -22,7 +21,9 @@ const AIGenerator = () => {
     generatingImage, 
     generatedImage, 
     setGeneratedImage, 
-    generateDesignWithAI 
+    generateDesignWithAI,
+    useFallback,
+    setUseFallback
   } = useAiGenerator();
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -75,10 +76,12 @@ const AIGenerator = () => {
         </div>
 
         <Card className="p-6 mb-8">
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
-            <p className="font-medium">AI System Notice</p>
-            <p>Our AI generation system is currently showing sample images. Full AI generation will be available soon. Thank you for your patience!</p>
-          </div>
+          {useFallback && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
+              <p className="font-medium">AI System Notice</p>
+              <p>Our AI generation system is currently showing sample images. Full AI generation will be available soon. Thank you for your patience!</p>
+            </div>
+          )}
           
           <div className="mb-4">
             <label htmlFor="prompt-house" className="block text-sm font-medium mb-2">

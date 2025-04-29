@@ -23,7 +23,7 @@ serve(async (req) => {
 
     console.log(`Making request to OpenAI API with ${type} prompt:`, prompt);
 
-    // Fix: Using object for headers instead of string
+    // Using object for headers instead of string
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -50,6 +50,7 @@ serve(async (req) => {
 
     console.log('OpenAI API response:', data);
 
+    // Fix: Return the image URL in the correct format expected by the client
     return new Response(
       JSON.stringify({
         image: data.data?.[0]?.url,
