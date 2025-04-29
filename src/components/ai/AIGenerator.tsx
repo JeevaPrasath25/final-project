@@ -77,7 +77,7 @@ const AIGenerator = () => {
           {useFallback && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-sm mb-4">
               <p className="font-medium">AI System Notice</p>
-              <p>Our AI generation system is currently showing sample images. Full AI generation will be available soon. Thank you for your patience!</p>
+              <p>Our AI model is currently being trained and will be available soon. Sample images are being shown in the meantime. Thank you for your patience!</p>
             </div>
           )}
           
