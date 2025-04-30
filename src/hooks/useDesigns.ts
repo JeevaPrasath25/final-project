@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +82,7 @@ export const useDesigns = (architectId?: string) => {
 
         const metadata = design.metadata || {};
         const category = metadata.category || "inspiration";
+        const designTags = design.tags || [];
 
         return {
           id: design.id,
@@ -96,7 +98,8 @@ export const useDesigns = (architectId?: string) => {
           category: category,
           rooms: category === "floorplan" ? metadata.rooms : undefined,
           size: category === "floorplan" ? metadata.squareFeet : undefined,
-          style: category === "inspiration" ? metadata.designType : undefined
+          style: category === "inspiration" ? metadata.designType : undefined,
+          tags: designTags
         };
       }));
       

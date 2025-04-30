@@ -12,7 +12,7 @@ import DesignGrid from "@/components/designs/DesignGrid";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Design } from "@/types/design";
+import { Design, DesignMetadata } from "@/types/design";
 import { useToast } from "@/hooks/use-toast";
 
 const ArchitectProfile = () => {
@@ -64,8 +64,10 @@ const ArchitectProfile = () => {
         if (designsError) throw designsError;
 
         // Format the designs data
-        const formattedDesigns = designsData.map((design) => {
-          const metadata = design.metadata || {};
+        const formattedDesigns: Design[] = designsData.map((design) => {
+          const metadata = design.metadata as DesignMetadata || {};
+          const designType = typeof metadata === 'object' && metadata ? metadata.designType : undefined;
+          
           return {
             id: design.id,
             title: design.title,
@@ -74,9 +76,10 @@ const ArchitectProfile = () => {
             user_id: design.user_id,
             architect_id: id,
             architect_name: architectData.username,
-            metadata,
-            style: metadata.designType || design.design_type,
-            tags: design.tags || []
+            metadata: metadata,
+            style: designType || design.design_type,
+            tags: design.tags || [],
+            description: design.description
           };
         });
 
@@ -211,18 +214,18 @@ const ArchitectProfile = () => {
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="md:w-1/4 flex flex-col items-center text-center">
               <Avatar className="h-32 w-32 mb-4">
-                <AvatarImage src={architect.avatar_url || undefined} alt={architect.username} />
+                <AvatarImage src={architect?.avatar_url || undefined} alt={architect?.username} />
                 <AvatarFallback className="text-3xl">
-                  {architect.username?.charAt(0).toUpperCase()}
+                  {architect?.username?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <h1 className="text-2xl font-semibold mb-1">{architect.username}</h1>
-              {architect.skills && (
+              <h1 className="text-2xl font-semibold mb-1">{architect?.username}</h1>
+              {architect?.skills && (
                 <p className="text-primary mb-4">{architect.skills}</p>
               )}
               
               <div className="flex space-x-2 mt-4 w-full">
-                {user && user.id !== architect.id && (
+                {user && user.id !== architect?.id && (
                   <>
                     <Button 
                       variant={isFollowing ? "outline" : "default"}
@@ -239,7 +242,7 @@ const ArchitectProfile = () => {
                     </Button>
                   </>
                 )}
-                {(!user || (user && user.id === architect.id)) && (
+                {(!user || (user && user.id === architect?.id)) && (
                   <Button 
                     variant="outline" 
                     className="w-full"
@@ -254,7 +257,7 @@ const ArchitectProfile = () => {
             </div>
             
             <div className="md:w-3/4">
-              {architect.bio && (
+              {architect?.bio && (
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold mb-2">About</h2>
                   <p className="text-muted-foreground">{architect.bio}</p>
